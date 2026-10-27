@@ -10,7 +10,7 @@ mod bitblock;
 use std::cmp::Reverse;
 
 use bitblock::BitBlock;
-use image::DynamicImage;
+use image::{DynamicImage, GrayImage};
 use rand::rngs::StdRng;
 use rand::{Rng, RngExt, SeedableRng};
 
@@ -65,12 +65,39 @@ impl Options {
 /// The result of [`encode`].
 #[derive(Clone, Debug)]
 pub struct Qart {
-    pub code: Code,
+    code: Code,
     /// Row-major, `code.size()` squared: modules whose color was chosen to
     /// match the image.
-    pub controlled: Vec<bool>,
+    controlled: Vec<bool>,
+    text: String,
+}
+
+impl Qart {
+    pub fn code(&self) -> &Code {
+        &self.code
+    }
+
     /// What the code decodes to.
-    pub text: String,
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
+    /// Number of modules on a side.
+    pub fn size(&self) -> usize {
+        self.code.size()
+    }
+
+    /// Reports whether the color of the module in column `x`, row `y` was
+    /// chosen to match the image; false outside the code.
+    pub fn controlled(&self, x: usize, y: usize) -> bool {
+        let size = self.size();
+        x < size && y < size && self.controlled[y * size + x]
+    }
+
+    /// Renders the code; see [`Code::to_image`].
+    pub fn to_image(&self, scale: u32, border: u32) -> GrayImage {
+        self.code.to_image(scale, border)
+    }
 }
 
 #[derive(Clone, Copy, Default)]

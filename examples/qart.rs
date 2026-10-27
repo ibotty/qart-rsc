@@ -3,7 +3,6 @@ use std::str::FromStr;
 
 use qart::art::{Options, encode};
 use qart::coding::{Mask, Rotation, Version};
-use qart::render::control_image;
 
 const USAGE: &str = "usage: qart <image> <url> [-o out.png] [--version N] [--mask N] \
 [--dx N] [--dy N] [--size N] [--rot 0..3] [--seed N] [--rand] [--only-data] \
@@ -93,11 +92,11 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     };
     let img = image::open(&args.image)?;
     let q = encode(&img, &opts)?;
-    q.code.to_image(args.scale, 4).save(&args.out)?;
+    q.to_image(args.scale, 4).save(&args.out)?;
     if let Some(path) = &args.control {
-        control_image(&q, args.scale, 4).save(path)?;
+        q.control_image(args.scale, 4).save(path)?;
     }
-    println!("{}", q.text);
+    println!("{}", q.text());
     Ok(())
 }
 
