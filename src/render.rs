@@ -1,10 +1,26 @@
 //! Image output for [`Qart`].
 
-use image::{Rgba, RgbaImage};
+use image::{GrayImage, Luma, Rgba, RgbaImage};
 
 use crate::art::Qart;
+use crate::coding::Code;
 
 const WHITE: Rgba<u8> = Rgba([0xff; 4]);
+
+impl Code {
+    /// Renders the code as a gray image, black modules 0 and white 255, with
+    /// `border` white modules around it.
+    pub fn to_image(&self, scale: u32, border: u32) -> GrayImage {
+        let side = (self.size() as u32 + 2 * border) * scale;
+        GrayImage::from_fn(side, side, |x, y| {
+            let (mx, my) = (x / scale, y / scale);
+            let black = mx >= border
+                && my >= border
+                && self.black((mx - border) as usize, (my - border) as usize);
+            Luma([if black { 0 } else { 255 }])
+        })
+    }
+}
 
 /// Shows which modules were controlled: those are pure black or white, the
 /// others dark or light gray.

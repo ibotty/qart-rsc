@@ -1,4 +1,4 @@
-use image::{DynamicImage, GrayImage, Luma};
+use image::DynamicImage;
 use qart::art::{Options, Qart, encode};
 use qart::coding::{Code, Level, Mask, Plan, Role, Rotation, Version};
 use qart::render::control_image;
@@ -20,19 +20,8 @@ fn options(version: u8, url: &str) -> Options {
     }
 }
 
-fn render(code: &Code, scale: u32, border: u32) -> GrayImage {
-    let side = (code.size() as u32 + 2 * border) * scale;
-    GrayImage::from_fn(side, side, |x, y| {
-        let (mx, my) = (x / scale, y / scale);
-        let black = mx >= border
-            && my >= border
-            && code.black((mx - border) as usize, (my - border) as usize);
-        Luma([if black { 0 } else { 255 }])
-    })
-}
-
 fn decode(code: &Code) -> String {
-    let img = render(code, 8, 4);
+    let img = code.to_image(8, 4);
     let mut prepared = rqrr::PreparedImage::prepare_from_greyscale(
         img.width() as usize,
         img.height() as usize,
@@ -186,4 +175,14 @@ fn control_image_marks_controlled_modules() {
         }
     }
     assert_eq!(seen, [true; 2]);
+}
+
+#[test]
+fn to_image_dimensions() {
+    let q = run(&options(1, "https://a.b/"), 1);
+    assert_eq!(q.code.to_image(1, 0).dimensions(), (21, 21));
+    assert_eq!(q.code.to_image(4, 4).dimensions(), (116, 116));
+    let img = q.code.to_image(2, 1);
+    assert_eq!(img.get_pixel(0, 0).0, [255]);
+    assert_eq!(img.get_pixel(2, 2).0, [0]);
 }
