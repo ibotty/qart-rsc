@@ -1,5 +1,9 @@
 //! Low-level QR coding details.
 
+mod bits;
+
+pub use bits::{BitWriter, Segment};
+
 use crate::{Error, Result};
 
 /// A QR version, from 1 to 40; a larger version stores more information.
