@@ -1,6 +1,7 @@
 use image::{DynamicImage, GrayImage, Luma};
 use qart::art::{Options, Qart, encode};
-use qart::coding::{Code, Mask, Rotation, Version};
+use qart::coding::{Code, Level, Mask, Plan, Role, Rotation, Version};
+use qart::render::control_image;
 use qart::target::Target;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
@@ -13,13 +14,9 @@ fn pjw() -> DynamicImage {
 
 fn options(version: u8, url: &str) -> Options {
     Options {
-        url: url.to_owned(),
-        version: Version::new(version).unwrap(),
-        mask: Mask::new(2).unwrap(),
         dx: 4,
         dy: 4,
-        size: 0,
-        rotation: Rotation::R0,
+        ..Options::new(url, Version::new(version).unwrap(), Mask::new(2).unwrap())
     }
 }
 
@@ -124,4 +121,69 @@ fn url_too_long_for_version() {
     let opts = options(1, "https://example.com/0123456789012345678901234567890");
     let err = encode(&pjw(), &opts, &mut StdRng::seed_from_u64(1)).unwrap_err();
     assert!(matches!(err, qart::Error::UrlTooLong));
+}
+
+#[test]
+fn rand_decodes_and_depends_on_seed() {
+    let opts = Options {
+        rand: true,
+        ..options(6, URL)
+    };
+    let (a, b) = (run(&opts, 1), run(&opts, 2));
+    assert_eq!(decode(&a.code), a.text);
+    assert_eq!(decode(&b.code), b.text);
+    assert!(a.code != b.code);
+}
+
+#[test]
+fn only_data_bits_leaves_check_modules() {
+    let opts = Options {
+        only_data_bits: true,
+        ..options(6, URL)
+    };
+    let q = run(&opts, 1);
+    assert_eq!(decode(&q.code), q.text);
+    let plan = Plan::new(opts.version, Level::L, opts.mask);
+    let size = q.code.size();
+    let mut data = 0;
+    for y in 0..size {
+        for x in 0..size {
+            if q.controlled[y * size + x] {
+                assert_eq!(plan.pixel(x, y).role, Role::Data, "({x}, {y})");
+                data += 1;
+            }
+        }
+    }
+    assert!(data > 0);
+}
+
+#[test]
+fn control_image_marks_controlled_modules() {
+    let q = run(&options(6, URL), 1);
+    let (scale, border) = (3, 2);
+    let img = control_image(&q, scale, border);
+    let side = (q.code.size() as u32 + 2 * border) * scale;
+    assert_eq!(img.dimensions(), (side, side));
+    let size = q.code.size();
+    let mut seen = [false; 2];
+    for y in 0..size {
+        for x in 0..size {
+            let px = img.get_pixel((x as u32 + border) * scale, (y as u32 + border) * scale);
+            if q.controlled[y * size + x] {
+                let black = q.code.black(x, y);
+                assert_eq!(px.0, if black { [0, 0, 0, 255] } else { [255; 4] });
+                seen[usize::from(black)] = true;
+            } else {
+                assert_eq!(
+                    px.0,
+                    if q.code.black(x, y) {
+                        [0x3f, 0x3f, 0x3f, 255]
+                    } else {
+                        [0xbf, 0xbf, 0xbf, 255]
+                    }
+                );
+            }
+        }
+    }
+    assert_eq!(seen, [true; 2]);
 }

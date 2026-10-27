@@ -33,6 +33,26 @@ pub struct Options {
     /// Added to the side of the code to get the side of the scaled image.
     pub size: i64,
     pub rotation: Rotation,
+    /// Choose modules by random priority instead of image contrast.
+    pub rand: bool,
+    /// Only control data modules, leaving the check modules alone.
+    pub only_data_bits: bool,
+}
+
+impl Options {
+    pub fn new(url: impl Into<String>, version: Version, mask: Mask) -> Self {
+        Self {
+            url: url.into(),
+            version,
+            mask,
+            dx: 0,
+            dy: 0,
+            size: 0,
+            rotation: Rotation::R0,
+            rand: false,
+            only_data_bits: false,
+        }
+    }
 }
 
 /// The result of [`encode`].
@@ -83,7 +103,14 @@ pub fn encode(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result<
     let mut info = vec![PixInfo::default(); (plan.data_bytes + plan.check_bytes) * 8];
     for (x, y, pix) in plan.pixels() {
         if matches!(pix.role, Role::Data | Role::Check) {
-            let (targ, contrast) = target.sample(x, y, opts.dx, opts.dy);
+            let (targ, mut contrast) = target.sample(x, y, opts.dx, opts.dy);
+            if opts.rand && contrast.is_some() {
+                contrast = Some(
+                    rng.random_range(0..128)
+                        + 64 * ((x + y) % 2) as u32
+                        + 64 * ((x + y) % 3 % 2) as u32,
+                );
+            }
             info[pix.offset as usize] = PixInfo {
                 x,
                 y,
@@ -137,8 +164,9 @@ pub fn encode(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result<
             }
 
             // Try the bits with the most contrast first.
+            let checks = if opts.only_data_bits { 0 } else { nc * 8 };
             let mut order: Vec<(usize, i64)> = (doff + lo..doff + hi)
-                .chain((0..nc * 8).map(|i| data_bits + coff + i))
+                .chain((0..checks).map(|i| data_bits + coff + i))
                 .map(|off| {
                     let jitter = i64::from(rng.random::<u8>());
                     (off, info[off].contrast << 8 | jitter)
