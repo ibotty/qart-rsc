@@ -1,8 +1,10 @@
 //! Low-level QR coding details.
 
 mod bits;
+mod plan;
 
 pub use bits::{BitWriter, Segment};
+pub use plan::{Code, Pixel, Plan, Role, Rotation};
 
 use crate::{Error, Result};
 
