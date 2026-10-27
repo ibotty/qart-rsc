@@ -45,10 +45,12 @@ impl Target {
         }
     }
 
+    #[cfg(test)]
     pub fn width(&self) -> usize {
         self.width
     }
 
+    #[cfg(test)]
     pub fn height(&self) -> usize {
         self.height
     }
@@ -174,5 +176,17 @@ mod tests {
         let thin = DynamicImage::ImageRgba8(RgbaImage::new(1000, 1));
         let t = Target::from_image(&thin, 10);
         assert_eq!((t.width(), t.height()), (10, 1));
+    }
+
+    #[test]
+    fn loads_pjw() {
+        let t = Target::from_image(&crate::testutil::pjw(), 41);
+        assert_eq!(t.width().max(t.height()), 41);
+        assert!(t.width() > 0 && t.height() > 0);
+        let opaque = (0..t.height() as i64)
+            .flat_map(|y| (0..t.width() as i64).map(move |x| (x, y)))
+            .filter(|&(x, y)| t.get(x, y).is_some())
+            .count();
+        assert!(opaque > 0);
     }
 }

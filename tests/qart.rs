@@ -1,7 +1,5 @@
 use image::DynamicImage;
-use qart::art::{Options, Qart, encode};
-use qart::coding::{Code, Level, Plan, Role, Rotation, Version};
-use qart::target::Target;
+use qart::{Code, Options, Qart, Rotation, Version, encode};
 
 const URL: &str = "https://research.swtch.com/qart";
 
@@ -83,31 +81,6 @@ fn all_rotations_decode() {
 }
 
 #[test]
-fn controlled_modules_follow_the_image() {
-    let opts = options(6, URL);
-    let q = run(&opts, 1);
-    let size = q.size();
-    let target = Target::from_image(&pjw(), (size as i64 + opts.size) as u32);
-
-    let (mut controlled, mut matching) = (0, 0);
-    for y in 0..size {
-        for x in 0..size {
-            if q.controlled(x, y) {
-                controlled += 1;
-                let (targ, _) = target.sample(x, y, opts.dx, opts.dy);
-                matching += usize::from((targ < 128) == q.code().black(x, y));
-            }
-        }
-    }
-    eprintln!(
-        "controlled {controlled}/{} matching {matching}",
-        size * size
-    );
-    assert!(controlled > size * size / 3);
-    assert!(matching * 100 >= controlled * 99);
-}
-
-#[test]
 fn url_too_long_for_version() {
     let opts = options(1, "https://example.com/0123456789012345678901234567890");
     let err = encode(&pjw(), &opts).unwrap_err();
@@ -124,28 +97,6 @@ fn rand_decodes_and_depends_on_seed() {
     assert_eq!(decode(a.code()), a.text());
     assert_eq!(decode(b.code()), b.text());
     assert!(a.code() != b.code());
-}
-
-#[test]
-fn only_data_bits_leaves_check_modules() {
-    let opts = Options {
-        only_data_bits: true,
-        ..options(6, URL)
-    };
-    let q = run(&opts, 1);
-    assert_eq!(decode(q.code()), q.text());
-    let plan = Plan::new(opts.version, Level::L, opts.mask);
-    let size = q.size();
-    let mut data = 0;
-    for y in 0..size {
-        for x in 0..size {
-            if q.controlled(x, y) {
-                assert_eq!(plan.pixel(x, y).role, Role::Data, "({x}, {y})");
-                data += 1;
-            }
-        }
-    }
-    assert!(data > 0);
 }
 
 #[test]

@@ -283,3 +283,62 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
         text: format!("{url}{num}"),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testutil::{decode, pjw};
+
+    const URL: &str = "https://research.swtch.com/qart";
+
+    fn options() -> Options {
+        Options {
+            dx: 4,
+            dy: 4,
+            seed: Some(1),
+            ..Options::new(URL)
+        }
+    }
+
+    #[test]
+    fn only_data_bits_leaves_check_modules() {
+        let opts = Options {
+            only_data_bits: true,
+            ..options()
+        };
+        let q = encode(&pjw(), &opts).unwrap();
+        assert_eq!(decode(q.code()), q.text());
+        let plan = Plan::new(opts.version, Level::L, opts.mask);
+        let mut data = 0;
+        for y in 0..q.size() {
+            for x in 0..q.size() {
+                if q.controlled(x, y) {
+                    assert_eq!(plan.pixel(x, y).role, Role::Data, "({x}, {y})");
+                    data += 1;
+                }
+            }
+        }
+        assert!(data > 0);
+    }
+
+    #[test]
+    fn controlled_modules_follow_the_image() {
+        let opts = options();
+        let q = encode(&pjw(), &opts).unwrap();
+        let size = q.size();
+        let target = Target::from_image(&pjw(), (size as i64 + opts.size) as u32);
+
+        let (mut controlled, mut matching) = (0, 0);
+        for y in 0..size {
+            for x in 0..size {
+                if q.controlled(x, y) {
+                    controlled += 1;
+                    let (targ, _) = target.sample(x, y, opts.dx, opts.dy);
+                    matching += usize::from((targ < 128) == q.code().black(x, y));
+                }
+            }
+        }
+        assert!(controlled > size * size / 3);
+        assert!(matching * 100 >= controlled * 99);
+    }
+}

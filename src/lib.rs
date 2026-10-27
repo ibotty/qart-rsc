@@ -1,8 +1,34 @@
-pub mod art;
-pub mod coding;
-pub mod gf256;
-pub mod render;
-pub mod target;
+mod art;
+mod coding;
+mod gf256;
+mod render;
+mod target;
+
+pub use art::{Options, Qart, encode};
+pub use coding::{Code, Mask, Rotation, Version};
+
+#[cfg(test)]
+pub(crate) mod testutil {
+    use image::DynamicImage;
+
+    use crate::Code;
+
+    pub fn pjw() -> DynamicImage {
+        image::open(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/pjw.png")).unwrap()
+    }
+
+    pub fn decode(code: &Code) -> String {
+        let img = code.to_image(8, 4);
+        let mut prepared = rqrr::PreparedImage::prepare_from_greyscale(
+            img.width() as usize,
+            img.height() as usize,
+            |x, y| img.get_pixel(x as u32, y as u32).0[0],
+        );
+        let grids = prepared.detect_grids();
+        assert_eq!(grids.len(), 1, "expected one QR code");
+        grids[0].decode().expect("code decodes").1
+    }
+}
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {

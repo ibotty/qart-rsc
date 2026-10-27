@@ -86,10 +86,6 @@ impl Field {
         f
     }
 
-    pub fn add(x: u8, y: u8) -> u8 {
-        x ^ y
-    }
-
     /// Base-alpha exponential of `e`; 0 if `e < 0`.
     pub fn exp(&self, e: i32) -> u8 {
         if e < 0 {
@@ -98,6 +94,7 @@ impl Field {
         self.exp[e as usize % 255]
     }
 
+    #[cfg(test)]
     /// Base-alpha logarithm of `x`; -1 if `x == 0`.
     pub fn log(&self, x: u8) -> i32 {
         if x == 0 {
@@ -107,6 +104,7 @@ impl Field {
         }
     }
 
+    #[cfg(test)]
     /// Multiplicative inverse of `x`; 0 if `x == 0`.
     pub fn inv(&self, x: u8) -> u8 {
         if x == 0 {

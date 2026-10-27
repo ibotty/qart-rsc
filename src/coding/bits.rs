@@ -121,6 +121,7 @@ impl Segment<'_> {
         }
     }
 
+    #[cfg(test)]
     /// Number of bits [`Segment::encode`] writes for version `v`.
     pub fn bits(&self, v: Version) -> usize {
         let class = v.size_class();
