@@ -71,6 +71,19 @@ pub enum Rotation {
     R270,
 }
 
+impl Rotation {
+    /// The rotation of `quarter_turns` clockwise quarter turns, from 0 to 3.
+    pub fn new(quarter_turns: u8) -> Result<Rotation> {
+        match quarter_turns {
+            0 => Ok(Rotation::R0),
+            1 => Ok(Rotation::R90),
+            2 => Ok(Rotation::R180),
+            3 => Ok(Rotation::R270),
+            n => Err(Error::InvalidRotation(n)),
+        }
+    }
+}
+
 /// Describes how to construct a QR code of a specific version, level and
 /// mask.
 #[derive(Clone, Debug)]
@@ -440,6 +453,12 @@ mod tests {
 
     fn plan(v: u8, l: Level, m: u8) -> Plan {
         Plan::new(Version::new(v).unwrap(), l, Mask::new(m).unwrap())
+    }
+
+    #[test]
+    fn rotation_range() {
+        assert_eq!(Rotation::new(3).unwrap(), Rotation::R270);
+        assert!(matches!(Rotation::new(4), Err(Error::InvalidRotation(4))));
     }
 
     #[test]

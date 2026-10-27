@@ -8,6 +8,10 @@ pub mod target;
 pub enum Error {
     #[error("invalid QR version {0}")]
     InvalidVersion(u8),
+    #[error("invalid QR mask {0}")]
+    InvalidMask(u8),
+    #[error("invalid rotation of {0} quarter turns")]
+    InvalidRotation(u8),
     #[error("cannot encode {have} bits into {want}-bit code")]
     TooLong { have: usize, want: usize },
     #[error("cannot encode URL into available bits")]

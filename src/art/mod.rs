@@ -26,7 +26,9 @@ const HARD_ZERO_CONTRAST: i64 = 1_000_000_000 >> 8;
 pub struct Options {
     /// The URL the code opens; the code decodes to `url`, `#` and digits.
     pub url: String,
+    /// Defaults to 6.
     pub version: Version,
+    /// Defaults to 2.
     pub mask: Mask,
     /// Offset of the image relative to the code, in modules.
     pub dx: i64,
@@ -43,11 +45,12 @@ pub struct Options {
 }
 
 impl Options {
-    pub fn new(url: impl Into<String>, version: Version, mask: Mask) -> Self {
+    /// Options for `url`, with the other fields at their defaults.
+    pub fn new(url: impl Into<String>) -> Self {
         Self {
             url: url.into(),
-            version,
-            mask,
+            version: Version::new(6).expect("6 is a valid version"),
+            mask: Mask::new(2).expect("2 is a valid mask"),
             dx: 0,
             dy: 0,
             size: 0,

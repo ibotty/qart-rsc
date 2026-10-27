@@ -79,26 +79,17 @@ fn parse_args() -> Result<Args, String> {
 }
 
 fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
-    let rotation = match args.rot {
-        0 => Rotation::R0,
-        1 => Rotation::R90,
-        2 => Rotation::R180,
-        3 => Rotation::R270,
-        n => return Err(format!("invalid --rot: {n}").into()),
-    };
     let opts = Options {
         dx: args.dx,
         dy: args.dy,
         size: args.size,
-        rotation,
+        version: Version::new(args.version)?,
+        mask: Mask::new(args.mask)?,
+        rotation: Rotation::new(args.rot)?,
         rand: args.rand,
         only_data_bits: args.only_data,
         seed: args.seed,
-        ..Options::new(
-            args.url,
-            Version::new(args.version)?,
-            Mask::new(args.mask).ok_or("invalid --mask")?,
-        )
+        ..Options::new(args.url)
     };
     let img = image::open(&args.image)?;
     let q = encode(&img, &opts)?;

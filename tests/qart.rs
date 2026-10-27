@@ -1,6 +1,6 @@
 use image::DynamicImage;
 use qart::art::{Options, Qart, encode};
-use qart::coding::{Code, Level, Mask, Plan, Role, Rotation, Version};
+use qart::coding::{Code, Level, Plan, Role, Rotation, Version};
 use qart::render::control_image;
 use qart::target::Target;
 
@@ -14,7 +14,8 @@ fn options(version: u8, url: &str) -> Options {
     Options {
         dx: 4,
         dy: 4,
-        ..Options::new(url, Version::new(version).unwrap(), Mask::new(2).unwrap())
+        version: Version::new(version).unwrap(),
+        ..Options::new(url)
     }
 }
 

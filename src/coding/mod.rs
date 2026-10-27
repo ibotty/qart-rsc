@@ -77,8 +77,12 @@ pub enum Level {
 pub struct Mask(u8);
 
 impl Mask {
-    pub fn new(m: u8) -> Option<Mask> {
-        (m < 8).then_some(Mask(m))
+    pub fn new(m: u8) -> Result<Mask> {
+        if m < 8 {
+            Ok(Mask(m))
+        } else {
+            Err(Error::InvalidMask(m))
+        }
     }
 
     pub fn get(self) -> u8 {
@@ -229,8 +233,8 @@ mod tests {
 
     #[test]
     fn mask_range() {
-        assert!(Mask::new(7).is_some());
-        assert!(Mask::new(8).is_none());
+        assert!(Mask::new(7).is_ok());
+        assert!(matches!(Mask::new(8), Err(Error::InvalidMask(8))));
     }
 
     #[test]
