@@ -4,8 +4,6 @@ use std::str::FromStr;
 use qart::art::{Options, encode};
 use qart::coding::{Mask, Rotation, Version};
 use qart::render::control_image;
-use rand::SeedableRng;
-use rand::rngs::StdRng;
 
 const USAGE: &str = "usage: qart <image> <url> [-o out.png] [--version N] [--mask N] \
 [--dx N] [--dy N] [--size N] [--rot 0..3] [--seed N] [--rand] [--only-data] \
@@ -95,6 +93,7 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         rotation,
         rand: args.rand,
         only_data_bits: args.only_data,
+        seed: args.seed,
         ..Options::new(
             args.url,
             Version::new(args.version)?,
@@ -102,11 +101,7 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         )
     };
     let img = image::open(&args.image)?;
-    let mut rng = match args.seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
-        None => StdRng::from_rng(&mut rand::rng()),
-    };
-    let q = encode(&img, &opts, &mut rng)?;
+    let q = encode(&img, &opts)?;
     q.code.to_image(args.scale, 4).save(&args.out)?;
     if let Some(path) = &args.control {
         control_image(&q, args.scale, 4).save(path)?;

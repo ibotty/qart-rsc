@@ -3,8 +3,6 @@ use qart::art::{Options, Qart, encode};
 use qart::coding::{Code, Level, Mask, Plan, Role, Rotation, Version};
 use qart::render::control_image;
 use qart::target::Target;
-use rand::SeedableRng;
-use rand::rngs::StdRng;
 
 const URL: &str = "https://research.swtch.com/qart";
 
@@ -33,7 +31,11 @@ fn decode(code: &Code) -> String {
 }
 
 fn run(opts: &Options, seed: u64) -> Qart {
-    encode(&pjw(), opts, &mut StdRng::seed_from_u64(seed)).unwrap()
+    let opts = Options {
+        seed: Some(seed),
+        ..opts.clone()
+    };
+    encode(&pjw(), &opts).unwrap()
 }
 
 #[test]
@@ -108,7 +110,7 @@ fn controlled_modules_follow_the_image() {
 #[test]
 fn url_too_long_for_version() {
     let opts = options(1, "https://example.com/0123456789012345678901234567890");
-    let err = encode(&pjw(), &opts, &mut StdRng::seed_from_u64(1)).unwrap_err();
+    let err = encode(&pjw(), &opts).unwrap_err();
     assert!(matches!(err, qart::Error::UrlTooLong));
 }
 

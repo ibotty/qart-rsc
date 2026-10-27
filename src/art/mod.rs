@@ -11,7 +11,8 @@ use std::cmp::Reverse;
 
 use bitblock::BitBlock;
 use image::DynamicImage;
-use rand::{Rng, RngExt};
+use rand::rngs::StdRng;
+use rand::{Rng, RngExt, SeedableRng};
 
 use crate::coding::{BitWriter, Code, Level, Mask, Pixel, Plan, Role, Rotation, Segment, Version};
 use crate::gf256::{QR_FIELD, RsEncoder};
@@ -37,6 +38,8 @@ pub struct Options {
     pub rand: bool,
     /// Only control data modules, leaving the check modules alone.
     pub only_data_bits: bool,
+    /// Seed for the random choices; `None` draws fresh entropy.
+    pub seed: Option<u64>,
 }
 
 impl Options {
@@ -51,6 +54,7 @@ impl Options {
             rotation: Rotation::R0,
             rand: false,
             only_data_bits: false,
+            seed: None,
         }
     }
 }
@@ -85,7 +89,15 @@ fn bit_of(bytes: &[u8], bi: usize) -> u32 {
 /// Builds a QR code whose controllable modules follow `img`.
 ///
 /// Modules where the image has the most contrast are chosen first.
-pub fn encode(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result<Qart> {
+pub fn encode(img: &DynamicImage, opts: &Options) -> Result<Qart> {
+    let mut rng = match opts.seed {
+        Some(seed) => StdRng::seed_from_u64(seed),
+        None => StdRng::from_rng(&mut rand::rng()),
+    };
+    encode_with(img, opts, &mut rng)
+}
+
+fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result<Qart> {
     let v = opts.version;
     let side = (v.size() as i64 + opts.size).clamp(1, i64::from(u32::MAX)) as u32;
     let target = Target::from_image(img, side);
