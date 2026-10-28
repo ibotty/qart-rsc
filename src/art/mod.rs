@@ -98,6 +98,46 @@ impl Qart {
     }
 
     /// All modules, row by row.
+    ///
+    /// # Examples
+    ///
+    /// Drawing the black modules as a Typst box, a ConTeXt MetaFun graphic and
+    /// an SVG, each with one unit square per module and no quiet zone:
+    ///
+    /// ```
+    /// use std::fmt::Write;
+    ///
+    /// use qart::{Options, encode};
+    ///
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// # let img = image::open("tests/pjw.png")?;
+    /// let q = encode(&img, &Options::new("https://example.com"))?;
+    /// let n = q.size();
+    /// let black = || q.modules().filter(|m| m.black);
+    ///
+    /// let mut typst = format!("#box(width: {n}mm, height: {n}mm, {{\n");
+    /// for m in black() {
+    ///     let (x, y) = (m.x, m.y);
+    ///     writeln!(typst, "  place(dx: {x}mm, dy: {y}mm, rect(width: 1mm, height: 1mm, fill: black))")?;
+    /// }
+    /// typst.push_str("})\n");
+    ///
+    /// let mut metafun = String::from("\\startMPcode\n");
+    /// for m in black() {
+    ///     writeln!(metafun, "  fill unitsquare shifted ({}, {}) scaled 1mm ;", m.x, n - 1 - m.y)?;
+    /// }
+    /// metafun.push_str("\\stopMPcode\n");
+    ///
+    /// let mut svg = format!(
+    ///     r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {n} {n}" shape-rendering="crispEdges"><path d=""#
+    /// );
+    /// for m in black() {
+    ///     write!(svg, "M{} {}h1v1h-1z", m.x, m.y)?;
+    /// }
+    /// svg.push_str(r#""/></svg>"#);
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn modules(&self) -> impl Iterator<Item = Module> + '_ {
         let size = self.size();
         (0..size * size).map(move |i| {
