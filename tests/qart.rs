@@ -137,3 +137,16 @@ fn to_image_dimensions() {
     assert_eq!(img.get_pixel(0, 0).0, [255]);
     assert_eq!(img.get_pixel(2, 2).0, [0]);
 }
+
+#[test]
+fn modules_cover_the_code_row_by_row() {
+    let q = run(&options(1, "https://a.b/"), 1);
+    let size = q.size();
+    let modules: Vec<_> = q.modules().collect();
+    assert_eq!(modules.len(), size * size);
+    for (i, m) in modules.iter().enumerate() {
+        assert_eq!((m.x, m.y), (i % size, i / size));
+        assert_eq!(m.black, q.code().black(m.x, m.y));
+        assert_eq!(m.controlled, q.controlled(m.x, m.y));
+    }
+}

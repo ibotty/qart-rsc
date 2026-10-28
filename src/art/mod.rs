@@ -97,10 +97,35 @@ impl Qart {
         x < size && y < size && self.controlled[y * size + x]
     }
 
+    /// All modules, row by row.
+    pub fn modules(&self) -> impl Iterator<Item = Module> + '_ {
+        let size = self.size();
+        (0..size * size).map(move |i| {
+            let (x, y) = (i % size, i / size);
+            Module {
+                x,
+                y,
+                black: self.code.black(x, y),
+                controlled: self.controlled[i],
+            }
+        })
+    }
+
     /// Renders the code; see [`Code::to_image`] for the arguments.
     pub fn to_image(&self, scale: u32, border: u32) -> GrayImage {
         self.code.to_image(scale, border)
     }
+}
+
+/// A module of a [`Qart`] code, in column `x` and row `y`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[non_exhaustive]
+pub struct Module {
+    pub x: usize,
+    pub y: usize,
+    pub black: bool,
+    /// The color was chosen to match the image.
+    pub controlled: bool,
 }
 
 #[derive(Clone, Copy, Default)]

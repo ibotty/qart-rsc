@@ -4,7 +4,7 @@ mod gf256;
 mod render;
 mod target;
 
-pub use art::{Options, Qart, encode};
+pub use art::{Module, Options, Qart, encode};
 pub use coding::{Code, Mask, Rotation, Version};
 
 #[cfg(test)]
