@@ -4,6 +4,8 @@ Embeds an image in a QR code that still scans. Rust port of the `qart`
 package of [rsc/qr](https://github.com/rsc/qr), described in Russ Cox's
 [QR Codes as Art](https://research.swtch.com/qart).
 
+![QR code made from the pjw image](docs/example.svg)
+
 ```rust
 use qart::{Options, encode};
 

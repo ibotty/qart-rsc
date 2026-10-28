@@ -5,6 +5,8 @@
 //! The code decodes to the URL, a `#` and a run of digits; [`encode`] chooses
 //! the digits so that the modules resemble the image.
 //!
+#![doc = include_str!("../docs/example.svg")]
+//!
 //! ```no_run
 //! use qart::{Options, encode};
 //!
