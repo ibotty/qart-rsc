@@ -1,3 +1,26 @@
+//! Embeds an image in a QR code that still scans. Rust port of the `qart`
+//! package of [rsc/qr](https://github.com/rsc/qr), described in Russ Cox's
+//! [QR Codes as Art](https://research.swtch.com/qart).
+//!
+//! The code decodes to the URL, a `#` and a run of digits; [`encode`] chooses
+//! the digits so that the modules resemble the image.
+//!
+//! ```no_run
+//! use qart::{Options, encode};
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let img = image::open("tests/pjw.png")?;
+//! let opts = Options::new("https://research.swtch.com/qart");
+//! let q = encode(&img, &opts)?;
+//! q.to_image(8, 4).save("out.png")?;
+//! q.control_image(8, 4).save("control.png")?;
+//! println!("{}", q.text());
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! [`Qart::modules`] iterates over the modules, for other output formats.
+
 mod art;
 mod coding;
 mod gf256;
