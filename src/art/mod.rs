@@ -30,8 +30,11 @@ pub struct Options {
     pub version: Version,
     /// Defaults to 2.
     pub mask: Mask,
-    /// Offset of the image relative to the code, in modules.
+    /// Horizontal offset in modules: the module in column `x` takes its color
+    /// from image column `x + dx`, so a positive value moves the image left.
+    /// Defaults to 4, as in the original's UI.
     pub dx: i64,
+    /// Vertical offset in modules, like `dx` for rows. Defaults to 4.
     pub dy: i64,
     /// Added to the side of the code to get the side of the scaled image.
     pub size: i64,
@@ -51,8 +54,8 @@ impl Options {
             url: url.into(),
             version: Version::new(6).expect("6 is a valid version"),
             mask: Mask::new(2).expect("2 is a valid mask"),
-            dx: 0,
-            dy: 0,
+            dx: 4,
+            dy: 4,
             size: 0,
             rotation: Rotation::R0,
             rand: false,
@@ -295,8 +298,6 @@ mod tests {
 
     fn options() -> Options {
         Options {
-            dx: 4,
-            dy: 4,
             seed: Some(1),
             ..Options::new(URL)
         }

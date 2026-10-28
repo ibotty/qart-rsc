@@ -9,8 +9,6 @@ fn pjw() -> DynamicImage {
 
 fn options(version: u8, url: &str) -> Options {
     Options {
-        dx: 4,
-        dy: 4,
         version: Version::new(version).unwrap(),
         ..Options::new(url)
     }
