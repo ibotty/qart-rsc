@@ -8,7 +8,7 @@ package of [rsc/qr](https://github.com/rsc/qr), described in Russ Cox's
 use qart::{Options, encode};
 
 let img = image::open("tests/pjw.png")?;
-let opts = Options { dx: 4, dy: 4, seed: Some(1), ..Options::new("https://research.swtch.com/qart") };
+let opts = Options { dx: 4, dy: 4, seed: Some(529630137), ..Options::new("https://research.swtch.com/qart") };
 let q = encode(&img, &opts)?;
 q.to_image(8, 4).save("out.png")?;
 q.control_image(8, 4).save("control.png")?;
@@ -18,7 +18,7 @@ println!("{}", q.text());
 Command line:
 
 ```sh
-cargo run --example qart -- tests/pjw.png https://research.swtch.com/qart --seed 1 -o out.png
+cargo run --example qart -- tests/pjw.png https://research.swtch.com/qart --seed 529630137 -o out.png
 ```
 
 ## Credits
