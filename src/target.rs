@@ -45,16 +45,6 @@ impl Target {
         }
     }
 
-    #[cfg(test)]
-    pub fn width(&self) -> usize {
-        self.width
-    }
-
-    #[cfg(test)]
-    pub fn height(&self) -> usize {
-        self.height
-    }
-
     /// Luminance at `x`, `y`; `None` when out of range or transparent.
     pub fn get(&self, x: i64, y: i64) -> Option<u8> {
         let x = usize::try_from(x).ok().filter(|&x| x < self.width)?;
@@ -154,7 +144,7 @@ mod tests {
         img.put_pixel(1, 0, Rgba([255, 0, 0, 255]));
         img.put_pixel(2, 0, Rgba([9, 9, 9, 0]));
         let t = Target::from_image(&DynamicImage::ImageRgba8(img), 4);
-        assert_eq!((t.width(), t.height()), (4, 4));
+        assert_eq!((t.width, t.height), (4, 4));
         assert_eq!(t.get(0, 0), Some(0));
         assert_eq!(t.get(1, 0), Some(((299 * 255 + 500) / 1000) as u8));
         assert_eq!(t.get(2, 0), None);
@@ -165,26 +155,26 @@ mod tests {
     fn from_image_keeps_aspect_ratio() {
         let wide = DynamicImage::ImageRgba8(RgbaImage::new(100, 50));
         let t = Target::from_image(&wide, 20);
-        assert_eq!((t.width(), t.height()), (20, 10));
+        assert_eq!((t.width, t.height), (20, 10));
         let tall = DynamicImage::ImageRgba8(RgbaImage::new(30, 90));
         let t = Target::from_image(&tall, 20);
-        assert_eq!((t.width(), t.height()), (6, 20));
+        assert_eq!((t.width, t.height), (6, 20));
     }
 
     #[test]
     fn from_image_never_empty() {
         let thin = DynamicImage::ImageRgba8(RgbaImage::new(1000, 1));
         let t = Target::from_image(&thin, 10);
-        assert_eq!((t.width(), t.height()), (10, 1));
+        assert_eq!((t.width, t.height), (10, 1));
     }
 
     #[test]
     fn loads_pjw() {
         let t = Target::from_image(&crate::testutil::pjw(), 41);
-        assert_eq!(t.width().max(t.height()), 41);
-        assert!(t.width() > 0 && t.height() > 0);
-        let opaque = (0..t.height() as i64)
-            .flat_map(|y| (0..t.width() as i64).map(move |x| (x, y)))
+        assert_eq!(t.width.max(t.height), 41);
+        assert!(t.width > 0 && t.height > 0);
+        let opaque = (0..t.height as i64)
+            .flat_map(|y| (0..t.width as i64).map(move |x| (x, y)))
             .filter(|&(x, y)| t.get(x, y).is_some())
             .count();
         assert!(opaque > 0);

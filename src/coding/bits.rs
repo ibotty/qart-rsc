@@ -121,16 +121,6 @@ impl Segment<'_> {
         }
     }
 
-    #[cfg(test)]
-    /// Number of bits [`Segment::encode`] writes for version `v`.
-    pub fn bits(&self, v: Version) -> usize {
-        let class = v.size_class();
-        match self {
-            Segment::Numeric(s) => 4 + NUM_LEN[class] + (10 * s.len()).div_ceil(3),
-            Segment::Bytes(s) => 4 + BYTES_LEN[class] + 8 * s.len(),
-        }
-    }
-
     /// Writes the segment; [`Segment::check`] must have succeeded.
     pub fn encode(&self, b: &mut BitWriter, v: Version) {
         let class = v.size_class();
@@ -219,17 +209,8 @@ mod tests {
             let seg = Segment::Numeric(s);
             let mut b = BitWriter::default();
             seg.encode(&mut b, v(1));
-            assert_eq!(seg.bits(v(1)), bits, "{s:?}");
             assert_eq!(b.bits(), bits, "{s:?}");
         }
-    }
-
-    #[test]
-    fn numeric_size_classes() {
-        let seg = Segment::Numeric("");
-        assert_eq!(seg.bits(v(9)), 14);
-        assert_eq!(seg.bits(v(10)), 16);
-        assert_eq!(seg.bits(v(27)), 18);
     }
 
     #[test]
@@ -254,7 +235,6 @@ mod tests {
     fn bytes_encoding() {
         let mut b = BitWriter::default();
         Segment::Bytes(b"hello").encode(&mut b, v(1));
-        assert_eq!(b.bits(), Segment::Bytes(b"hello").bits(v(1)));
         assert_eq!(b.bits(), 52);
         b.pad(4);
         assert_eq!(&b.bytes()[..3], [0x40, 0x56, 0x86]);

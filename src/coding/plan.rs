@@ -127,11 +127,6 @@ impl Plan {
         self.size
     }
 
-    #[cfg(test)]
-    pub fn pixel(&self, x: usize, y: usize) -> Pixel {
-        self.pixels[y * self.size + x]
-    }
-
     pub fn pixel_mut(&mut self, x: usize, y: usize) -> &mut Pixel {
         &mut self.pixels[y * self.size + x]
     }
@@ -504,6 +499,8 @@ mod tests {
     fn rotate_maps_like_go() {
         let base = plan(2, Level::L, 1);
         let n = base.size();
+        let pixels = |p: &Plan| p.pixels().map(|(_, _, pix)| pix).collect::<Vec<_>>();
+        let want = pixels(&base);
         for (rot, f) in [
             (
                 Rotation::R90,
@@ -514,10 +511,11 @@ mod tests {
         ] {
             let mut p = base.clone();
             p.rotate(rot);
+            let got = pixels(&p);
             for y in 0..n {
                 for x in 0..n {
                     let (sx, sy) = f(n, x, y);
-                    assert_eq!(p.pixel(x, y), base.pixel(sx, sy), "{rot:?} {x},{y}");
+                    assert_eq!(got[y * n + x], want[sy * n + sx], "{rot:?} {x},{y}");
                 }
             }
         }

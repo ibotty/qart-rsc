@@ -94,25 +94,6 @@ impl Field {
         self.exp[e as usize % 255]
     }
 
-    #[cfg(test)]
-    /// Base-alpha logarithm of `x`; -1 if `x == 0`.
-    pub fn log(&self, x: u8) -> i32 {
-        if x == 0 {
-            -1
-        } else {
-            self.log[x as usize].into()
-        }
-    }
-
-    #[cfg(test)]
-    /// Multiplicative inverse of `x`; 0 if `x == 0`.
-    pub fn inv(&self, x: u8) -> u8 {
-        if x == 0 {
-            return 0;
-        }
-        self.exp[255 - self.log[x as usize] as usize]
-    }
-
     pub fn mul(&self, x: u8, y: u8) -> u8 {
         if x == 0 || y == 0 {
             return 0;
@@ -214,16 +195,15 @@ mod tests {
         let f = &*QR_FIELD;
         assert_eq!((f.exp(0), f.exp(1), f.exp(255)), (1, 2, 1));
         assert_eq!(f.exp(-1), 0);
-        assert_eq!(f.log(0), -1);
-        assert_eq!(f.inv(0), 0);
     }
 
     #[test]
     fn field_identities() {
         let f = &*QR_FIELD;
         for x in 1..=255u8 {
-            assert_eq!(f.exp(f.log(x)), x);
-            assert_eq!(f.mul(x, f.inv(x)), 1);
+            let log = i32::from(f.log[x as usize]);
+            assert_eq!(f.exp(log), x);
+            assert_eq!(f.mul(x, f.exp(255 - log)), 1);
             assert_eq!(f.mul(x, 1), x);
             assert_eq!(f.mul(x, 0), 0);
         }

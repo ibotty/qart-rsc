@@ -286,6 +286,8 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+
     use super::*;
     use crate::testutil::{decode, pjw};
 
@@ -309,11 +311,16 @@ mod tests {
         let q = encode(&pjw(), &opts).unwrap();
         assert_eq!(decode(q.code()), q.text());
         let plan = Plan::new(opts.version, Level::L, opts.mask);
+        let data_modules: HashSet<_> = plan
+            .pixels()
+            .filter(|(_, _, pix)| pix.role == Role::Data)
+            .map(|(x, y, _)| (x, y))
+            .collect();
         let mut data = 0;
         for y in 0..q.size() {
             for x in 0..q.size() {
                 if q.controlled(x, y) {
-                    assert_eq!(plan.pixel(x, y).role, Role::Data, "({x}, {y})");
+                    assert!(data_modules.contains(&(x, y)), "({x}, {y})");
                     data += 1;
                 }
             }
