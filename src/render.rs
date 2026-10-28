@@ -8,8 +8,13 @@ use crate::coding::Code;
 const WHITE: Rgba<u8> = Rgba([0xff; 4]);
 
 impl Code {
-    /// Renders the code as a gray image, black modules 0 and white 255, with
-    /// `border` white modules around it.
+    /// Renders the code as a gray image, black modules 0 and white 255.
+    ///
+    /// # Arguments
+    ///
+    /// * `scale` - Pixels per module.
+    /// * `border` - White modules added on each side; the QR specification
+    ///   asks for 4.
     pub fn to_image(&self, scale: u32, border: u32) -> GrayImage {
         let side = (self.size() as u32 + 2 * border) * scale;
         GrayImage::from_fn(side, side, |x, y| {
@@ -25,6 +30,12 @@ impl Code {
 impl Qart {
     /// Shows which modules were controlled: those are pure black or white,
     /// the others dark or light gray.
+    ///
+    /// # Arguments
+    ///
+    /// * `scale` - Pixels per module.
+    /// * `border` - White modules added on each side; the QR specification
+    ///   asks for 4.
     pub fn control_image(&self, scale: u32, border: u32) -> RgbaImage {
         let size = self.size();
         let side = (size as u32 + 2 * border) * scale;

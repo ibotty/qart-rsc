@@ -97,7 +97,7 @@ impl Qart {
         x < size && y < size && self.controlled[y * size + x]
     }
 
-    /// Renders the code; see [`Code::to_image`].
+    /// Renders the code; see [`Code::to_image`] for the arguments.
     pub fn to_image(&self, scale: u32, border: u32) -> GrayImage {
         self.code.to_image(scale, border)
     }
