@@ -145,7 +145,7 @@ mod tests {
     use super::*;
 
     fn v(n: u8) -> Version {
-        Version::new(n).unwrap()
+        Version::try_from(n).unwrap()
     }
 
     #[test]

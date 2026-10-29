@@ -18,14 +18,6 @@ impl Version {
     pub const MIN: Version = Version(1);
     pub const MAX: Version = Version(40);
 
-    pub fn new(v: u8) -> Result<Version> {
-        if (Self::MIN.0..=Self::MAX.0).contains(&v) {
-            Ok(Version(v))
-        } else {
-            Err(Error::InvalidVersion(v))
-        }
-    }
-
     pub fn get(self) -> u8 {
         self.0
     }
@@ -56,11 +48,16 @@ impl Version {
     }
 }
 
+/// Fails with [`Error::InvalidVersion`] unless the number is from 1 to 40.
 impl TryFrom<u8> for Version {
     type Error = Error;
 
     fn try_from(v: u8) -> Result<Version> {
-        Version::new(v)
+        if (Self::MIN.0..=Self::MAX.0).contains(&v) {
+            Ok(Version(v))
+        } else {
+            Err(Error::InvalidVersion(v))
+        }
     }
 }
 
@@ -85,14 +82,6 @@ pub enum Level {
 pub struct Mask(u8);
 
 impl Mask {
-    pub fn new(m: u8) -> Result<Mask> {
-        if m < 8 {
-            Ok(Mask(m))
-        } else {
-            Err(Error::InvalidMask(m))
-        }
-    }
-
     pub fn get(self) -> u8 {
         self.0
     }
@@ -116,11 +105,16 @@ impl Mask {
     }
 }
 
+/// Fails with [`Error::InvalidMask`] unless the number is from 0 to 7.
 impl TryFrom<u8> for Mask {
     type Error = Error;
 
     fn try_from(m: u8) -> Result<Mask> {
-        Mask::new(m)
+        if m < 8 {
+            Ok(Mask(m))
+        } else {
+            Err(Error::InvalidMask(m))
+        }
     }
 }
 
@@ -216,15 +210,21 @@ mod tests {
     use super::*;
 
     fn v(n: u8) -> Version {
-        Version::new(n).unwrap()
+        Version::try_from(n).unwrap()
     }
 
     #[test]
     fn version_range() {
-        assert!(matches!(Version::new(0), Err(Error::InvalidVersion(0))));
-        assert!(matches!(Version::new(41), Err(Error::InvalidVersion(41))));
-        assert_eq!(Version::new(1).unwrap(), Version::MIN);
-        assert_eq!(Version::new(40).unwrap(), Version::MAX);
+        assert!(matches!(
+            Version::try_from(0),
+            Err(Error::InvalidVersion(0))
+        ));
+        assert!(matches!(
+            Version::try_from(41),
+            Err(Error::InvalidVersion(41))
+        ));
+        assert_eq!(Version::try_from(1).unwrap(), Version::MIN);
+        assert_eq!(Version::try_from(40).unwrap(), Version::MAX);
     }
 
     #[test]
@@ -249,16 +249,16 @@ mod tests {
 
     #[test]
     fn mask_range() {
-        assert!(Mask::new(7).is_ok());
-        assert!(matches!(Mask::new(8), Err(Error::InvalidMask(8))));
+        assert!(Mask::try_from(7).is_ok());
+        assert!(matches!(Mask::try_from(8), Err(Error::InvalidMask(8))));
     }
 
     #[test]
     fn mask_invert() {
-        let m0 = Mask::new(0).unwrap();
+        let m0 = Mask::try_from(0).unwrap();
         assert!(m0.invert(0, 0));
         assert!(!m0.invert(0, 1));
-        let m2 = Mask::new(2).unwrap();
+        let m2 = Mask::try_from(2).unwrap();
         assert!(m2.invert(5, 3));
         assert!(!m2.invert(3, 5));
     }

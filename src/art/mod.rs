@@ -45,8 +45,8 @@ impl Options {
     pub fn new(url: impl Into<String>) -> Self {
         Self {
             url: url.into(),
-            version: Version::new(6).expect("6 is a valid version"),
-            mask: Mask::new(2).expect("2 is a valid mask"),
+            version: Version::try_from(6).expect("6 is a valid version"),
+            mask: Mask::try_from(2).expect("2 is a valid mask"),
             dx: 4,
             dy: 4,
             size: 0,

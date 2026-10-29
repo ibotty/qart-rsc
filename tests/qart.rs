@@ -189,9 +189,9 @@ fn query_param_is_validated() {
 fn version_and_mask_take_numbers_or_types() {
     let a = Options::new(URL).version(6).unwrap().mask(2).unwrap();
     let b = Options::new(URL)
-        .version(Version::new(6).unwrap())
+        .version(Version::try_from(6).unwrap())
         .unwrap()
-        .mask(Mask::new(2).unwrap())
+        .mask(Mask::try_from(2).unwrap())
         .unwrap();
     assert_eq!(run(&a, 1).text(), run(&b, 1).text());
     assert_eq!(run(&a, 1).code(), run(&b, 1).code());

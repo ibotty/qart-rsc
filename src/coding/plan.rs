@@ -450,7 +450,7 @@ mod tests {
     use super::*;
 
     fn plan(v: u8, l: Level, m: u8) -> Plan {
-        Plan::new(Version::new(v).unwrap(), l, Mask::new(m).unwrap())
+        Plan::new(Version::try_from(v).unwrap(), l, Mask::try_from(m).unwrap())
     }
 
     #[test]
@@ -573,10 +573,10 @@ mod tests {
             (Segment::Numeric("123"), QrSegment::make_numeric("123")),
         ];
         for v in 1..=40 {
-            let version = Version::new(v).unwrap();
+            let version = Version::try_from(v).unwrap();
             for level in [Level::L, Level::M, Level::Q, Level::H] {
                 for m in 0..8 {
-                    let mask = Mask::new(m).unwrap();
+                    let mask = Mask::try_from(m).unwrap();
                     let plan = Plan::new(version, level, mask);
                     for (seg, oseg) in &inputs {
                         let ov = qrcodegen::Version::new(v);
