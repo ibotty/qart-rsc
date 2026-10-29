@@ -67,16 +67,8 @@ pub enum Error {
     InvalidParam(String),
     #[error("URL has a fragment; keep it with Options::query_param")]
     FragmentInUrl,
-    #[error("cannot encode {have} bits into {want}-bit code")]
-    TooLong { have: usize, want: usize },
     #[error("cannot encode URL into available bits")]
     UrlTooLong,
-    #[error("cannot preserve required bits")]
-    CannotPreserveBits,
-    #[error("non-numeric string {0:?}")]
-    NonNumeric(String),
-    #[error(transparent)]
-    Image(#[from] image::ImageError),
 }
 
 impl From<std::convert::Infallible> for Error {

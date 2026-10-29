@@ -402,9 +402,7 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
                 .max(lo as i64)) as usize;
             for i in (0..lo).chain(hi..nd * 8) {
                 let cur = bb.bit(i);
-                if !bb.can_set(i, cur) {
-                    return Err(Error::CannotPreserveBits);
-                }
+                assert!(bb.can_set(i, cur), "cannot preserve fixed bits");
             }
 
             // Try the bits with the most contrast first.
@@ -467,7 +465,7 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
         "digits do not reproduce the chosen bytes"
     );
 
-    let code = plan.encode(&segments(&prefix, &num, &suffix))?;
+    let code = plan.encode(&segments(&prefix, &num, &suffix));
     let size = plan.size();
     let mut controlled = vec![false; size * size];
     for pi in info.iter().filter(|pi| pi.controlled) {

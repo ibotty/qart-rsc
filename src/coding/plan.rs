@@ -161,17 +161,14 @@ impl Plan {
     }
 
     /// Encodes `segments` and returns the resulting code.
-    pub fn encode(&self, segments: &[Segment]) -> Result<Code> {
+    ///
+    /// # Panics
+    ///
+    /// Panics if the segments do not fit.
+    pub fn encode(&self, segments: &[Segment]) -> Code {
         let mut b = BitWriter::default();
         for s in segments {
-            s.check()?;
             s.encode(&mut b, self.version);
-        }
-        if b.bits() > self.data_bytes * 8 {
-            return Err(Error::TooLong {
-                have: b.bits(),
-                want: self.data_bytes * 8,
-            });
         }
         b.add_check_bytes(self.version, self.level);
         let bytes = b.bytes();
@@ -187,10 +184,10 @@ impl Plan {
                 _ => pix.black,
             })
             .collect();
-        Ok(Code {
+        Code {
             size: self.size,
             bits,
-        })
+        }
     }
 
     /// Timing, position and alignment patterns, version pattern and the dark
@@ -532,23 +529,9 @@ mod tests {
     }
 
     #[test]
-    fn encode_rejects_overflow() {
-        let p = plan(1, Level::L, 0);
-        let err = p.encode(&[Segment::Bytes(&[0; 30])]).unwrap_err();
-        assert!(matches!(err, Error::TooLong { want: 152, .. }));
-    }
-
-    #[test]
-    fn encode_rejects_non_numeric() {
-        let p = plan(1, Level::L, 0);
-        let err = p.encode(&[Segment::Numeric("1x")]).unwrap_err();
-        assert!(matches!(err, Error::NonNumeric(_)));
-    }
-
-    #[test]
     fn code_black_out_of_range() {
         let p = plan(1, Level::L, 0);
-        let c = p.encode(&[Segment::Numeric("1")]).unwrap();
+        let c = p.encode(&[Segment::Numeric("1")]);
         assert!(c.black(0, 0));
         assert!(!c.black(21, 0));
         assert!(!c.black(0, 21));
@@ -589,7 +572,7 @@ mod tests {
                             false,
                         )
                         .unwrap();
-                        let got = plan.encode(&[*seg]).unwrap();
+                        let got = plan.encode(&[*seg]);
                         assert_eq!(got.size() as i32, want.size());
                         for y in 0..got.size() {
                             for x in 0..got.size() {

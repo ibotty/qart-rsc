@@ -2,7 +2,6 @@
 
 use super::{Level, Version};
 use crate::gf256::{QR_FIELD, RsEncoder};
-use crate::{Error, Result};
 
 /// Appends bits MSB first.
 #[derive(Default, Clone, Debug)]
@@ -107,16 +106,11 @@ const NUM_LEN: [usize; 3] = [10, 12, 14];
 const BYTES_LEN: [usize; 3] = [8, 16, 16];
 
 impl Segment<'_> {
-    pub fn check(&self) -> Result<()> {
-        match self {
-            Segment::Numeric(s) if !s.bytes().all(|c| c.is_ascii_digit()) => {
-                Err(Error::NonNumeric((*s).to_owned()))
-            }
-            _ => Ok(()),
-        }
-    }
-
-    /// Writes the segment; [`Segment::check`] must have succeeded.
+    /// Writes the segment.
+    ///
+    /// # Panics
+    ///
+    /// In debug builds, panics on a non-digit in a numeric segment.
     pub fn encode(&self, b: &mut BitWriter, v: Version) {
         let class = v.size_class();
         match self {
@@ -124,6 +118,7 @@ impl Segment<'_> {
                 b.write(1, 4);
                 b.write(s.len() as u32, NUM_LEN[class]);
                 let digits = s.as_bytes();
+                debug_assert!(digits.iter().all(u8::is_ascii_digit), "non-numeric");
                 for group in digits.chunks(3) {
                     let w = group.iter().fold(0, |w, &c| w * 10 + u32::from(c - b'0'));
                     b.write(w, [0, 4, 7, 10][group.len()]);
@@ -197,16 +192,6 @@ mod tests {
             seg.encode(&mut b, v(1));
             assert_eq!(b.bits(), bits, "{s:?}");
         }
-    }
-
-    #[test]
-    fn numeric_check() {
-        assert!(Segment::Numeric("0123456789").check().is_ok());
-        assert!(matches!(
-            Segment::Numeric("12a").check(),
-            Err(Error::NonNumeric(_))
-        ));
-        assert!(Segment::Bytes(&[0, 255]).check().is_ok());
     }
 
     #[test]
