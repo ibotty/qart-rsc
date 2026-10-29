@@ -15,13 +15,6 @@ use crate::{Error, Result};
 pub struct Version(u8);
 
 impl Version {
-    pub const MIN: Version = Version(1);
-    pub const MAX: Version = Version(40);
-
-    pub fn get(self) -> u8 {
-        self.0
-    }
-
     /// Number of modules on a side.
     pub fn size(self) -> usize {
         17 + 4 * usize::from(self.0)
@@ -53,7 +46,7 @@ impl TryFrom<u8> for Version {
     type Error = Error;
 
     fn try_from(v: u8) -> Result<Version> {
-        if (Self::MIN.0..=Self::MAX.0).contains(&v) {
+        if (1..=40).contains(&v) {
             Ok(Version(v))
         } else {
             Err(Error::InvalidVersion(v))
@@ -61,13 +54,8 @@ impl TryFrom<u8> for Version {
     }
 }
 
-impl std::fmt::Display for Version {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
 /// Error correction level; from least to most tolerant: L, M, Q, H.
+#[cfg_attr(not(test), expect(dead_code, reason = "only L is used outside tests"))]
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Level {
     L,
@@ -82,10 +70,6 @@ pub enum Level {
 pub struct Mask(u8);
 
 impl Mask {
-    pub fn get(self) -> u8 {
-        self.0
-    }
-
     /// Reports whether the mask flips the module in row `y`, column `x`.
     ///
     /// <http://www.swetake.com/qr/qr5_en.html>
@@ -223,8 +207,8 @@ mod tests {
             Version::try_from(41),
             Err(Error::InvalidVersion(41))
         ));
-        assert_eq!(Version::try_from(1).unwrap(), Version::MIN);
-        assert_eq!(Version::try_from(40).unwrap(), Version::MAX);
+        assert!(Version::try_from(1).is_ok());
+        assert!(Version::try_from(40).is_ok());
     }
 
     #[test]

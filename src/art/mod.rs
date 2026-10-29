@@ -58,32 +58,23 @@ impl Options {
         }
     }
 
-    /// Sets the QR version, a [`Version`] or a number from 1 to 40. Defaults
-    /// to 6.
+    /// Sets the QR version, a number from 1 to 40. Defaults to 6.
     ///
     /// # Errors
     ///
     /// [`Error::InvalidVersion`] if the number is out of range.
-    pub fn version<V>(mut self, version: V) -> Result<Self>
-    where
-        V: TryInto<Version>,
-        Error: From<V::Error>,
-    {
-        self.version = version.try_into()?;
+    pub fn version(mut self, version: u8) -> Result<Self> {
+        self.version = Version::try_from(version)?;
         Ok(self)
     }
 
-    /// Sets the data mask, a [`Mask`] or a number from 0 to 7. Defaults to 2.
+    /// Sets the data mask, a number from 0 to 7. Defaults to 2.
     ///
     /// # Errors
     ///
     /// [`Error::InvalidMask`] if the number is out of range.
-    pub fn mask<M>(mut self, mask: M) -> Result<Self>
-    where
-        M: TryInto<Mask>,
-        Error: From<M::Error>,
-    {
-        self.mask = mask.try_into()?;
+    pub fn mask(mut self, mask: u8) -> Result<Self> {
+        self.mask = Mask::try_from(mask)?;
         Ok(self)
     }
 
@@ -105,11 +96,15 @@ impl Options {
         self
     }
 
-    /// Sets the rotation of the code layout. Defaults to none.
-    #[must_use]
-    pub fn rotation(mut self, rotation: Rotation) -> Self {
-        self.rotation = rotation;
-        self
+    /// Sets the clockwise rotation of the code layout in quarter turns, from
+    /// 0 to 3. Defaults to 0.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidRotation`] if the number is out of range.
+    pub fn rotation(mut self, quarter_turns: u8) -> Result<Self> {
+        self.rotation = Rotation::try_from(quarter_turns)?;
+        Ok(self)
     }
 
     /// Chooses modules by random priority instead of image contrast. Defaults

@@ -1,5 +1,5 @@
 use image::DynamicImage;
-use qart::{Mask, Options, Qart, Rotation, Version, encode};
+use qart::{Options, Qart, encode};
 
 const URL: &str = "https://research.swtch.com/qart";
 
@@ -61,8 +61,8 @@ fn all_versions_decode() {
 
 #[test]
 fn all_rotations_decode() {
-    for rotation in [Rotation::R0, Rotation::R90, Rotation::R180, Rotation::R270] {
-        let opts = options(6, URL).rotation(rotation);
+    for rotation in 0..4 {
+        let opts = options(6, URL).rotation(rotation).unwrap();
         let q = run(&opts, 3);
         assert_eq!(decode(&q), q.text(), "{rotation:?}");
     }
@@ -183,18 +183,6 @@ fn query_param_is_validated() {
         );
     }
     assert!(Options::new(URL).query_param("a-B_c.d~1").is_ok());
-}
-
-#[test]
-fn version_and_mask_take_numbers_or_types() {
-    let a = Options::new(URL).version(6).unwrap().mask(2).unwrap();
-    let b = Options::new(URL)
-        .version(Version::try_from(6).unwrap())
-        .unwrap()
-        .mask(Mask::try_from(2).unwrap())
-        .unwrap();
-    assert_eq!(run(&a, 1).text(), run(&b, 1).text());
-    assert_eq!(run(&a, 1), run(&b, 1));
 }
 
 #[test]

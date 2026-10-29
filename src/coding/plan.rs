@@ -71,9 +71,12 @@ pub enum Rotation {
     R270,
 }
 
-impl Rotation {
-    /// The rotation of `quarter_turns` clockwise quarter turns, from 0 to 3.
-    pub fn new(quarter_turns: u8) -> Result<Rotation> {
+/// Clockwise quarter turns, from 0 to 3; fails with
+/// [`Error::InvalidRotation`] otherwise.
+impl TryFrom<u8> for Rotation {
+    type Error = Error;
+
+    fn try_from(quarter_turns: u8) -> Result<Rotation> {
         match quarter_turns {
             0 => Ok(Rotation::R0),
             1 => Ok(Rotation::R90),
@@ -243,7 +246,7 @@ impl Plan {
         const FORMAT_POLY: u32 = 0x537;
         const INVERT: u32 = 0x5412;
         // Level: L=01, M=00, Q=11, H=10.
-        let mut fb = ((self.level as u32) ^ 1) << 13 | u32::from(self.mask.get()) << 10;
+        let mut fb = ((self.level as u32) ^ 1) << 13 | u32::from(self.mask.0) << 10;
         let mut rem = fb;
         for i in (10..=14).rev() {
             if rem & (1 << i) != 0 {
@@ -452,8 +455,11 @@ mod tests {
 
     #[test]
     fn rotation_range() {
-        assert_eq!(Rotation::new(3).unwrap(), Rotation::R270);
-        assert!(matches!(Rotation::new(4), Err(Error::InvalidRotation(4))));
+        assert_eq!(Rotation::try_from(3).unwrap(), Rotation::R270);
+        assert!(matches!(
+            Rotation::try_from(4),
+            Err(Error::InvalidRotation(4))
+        ));
     }
 
     #[test]

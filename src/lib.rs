@@ -30,7 +30,6 @@ mod render;
 mod target;
 
 pub use art::{Module, Options, Qart, encode};
-pub use coding::{Mask, Rotation, Version};
 
 #[cfg(test)]
 pub(crate) mod testutil {
@@ -69,12 +68,6 @@ pub enum Error {
     FragmentInUrl,
     #[error("cannot encode URL into available bits")]
     UrlTooLong,
-}
-
-impl From<std::convert::Infallible> for Error {
-    fn from(e: std::convert::Infallible) -> Self {
-        match e {}
-    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

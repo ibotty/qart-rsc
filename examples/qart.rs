@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 use std::str::FromStr;
 
-use qart::{Options, Rotation, encode};
+use qart::{Options, encode};
 
 const USAGE: &str = "usage: qart <image> <url> [-o out.png] [--version N] [--mask N] \
 [--param KEY] [--dx N] [--dy N] [--size N] [--rot 0..3] [--seed N] [--rand] [--only-data] \
@@ -85,7 +85,7 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         .mask(args.mask)?
         .offset(args.dx, args.dy)
         .size(args.size)
-        .rotation(Rotation::new(args.rot)?)
+        .rotation(args.rot)?
         .rand(args.rand)
         .only_data_bits(args.only_data);
     if let Some(seed) = args.seed {
