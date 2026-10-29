@@ -4,7 +4,7 @@ use std::str::FromStr;
 use qart::{Mask, Options, Rotation, Version, encode};
 
 const USAGE: &str = "usage: qart <image> <url> [-o out.png] [--version N] [--mask N] \
-[--dx N] [--dy N] [--size N] [--rot 0..3] [--seed N] [--rand] [--only-data] \
+[--param KEY] [--dx N] [--dy N] [--size N] [--rot 0..3] [--seed N] [--rand] [--only-data] \
 [--control control.png] [--scale N]";
 
 struct Args {
@@ -19,6 +19,7 @@ struct Args {
     size: i64,
     rot: u8,
     seed: Option<u64>,
+    param: Option<String>,
     rand: bool,
     only_data: bool,
     scale: u32,
@@ -44,6 +45,7 @@ fn parse_args() -> Result<Args, String> {
         size: 0,
         rot: 0,
         seed: None,
+        param: None,
         rand: false,
         only_data: false,
         scale: 8,
@@ -61,6 +63,7 @@ fn parse_args() -> Result<Args, String> {
             "--size" => args.size = parse(&arg, it.next())?,
             "--rot" => args.rot = parse(&arg, it.next())?,
             "--seed" => args.seed = Some(parse(&arg, it.next())?),
+            "--param" => args.param = Some(parse(&arg, it.next())?),
             "--scale" => args.scale = parse(&arg, it.next())?,
             "--rand" => args.rand = true,
             "--only-data" => args.only_data = true,
@@ -87,6 +90,9 @@ fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
         .only_data_bits(args.only_data);
     if let Some(seed) = args.seed {
         opts = opts.seed(seed);
+    }
+    if let Some(key) = args.param {
+        opts = opts.query_param(key)?;
     }
     let img = image::open(&args.image)?;
     let q = encode(&img, &opts)?;

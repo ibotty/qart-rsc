@@ -63,6 +63,10 @@ pub enum Error {
     InvalidMask(u8),
     #[error("invalid rotation of {0} quarter turns")]
     InvalidRotation(u8),
+    #[error("invalid query parameter name {0:?}")]
+    InvalidParam(String),
+    #[error("URL has a fragment; keep it with Options::query_param")]
+    FragmentInUrl,
     #[error("cannot encode {have} bits into {want}-bit code")]
     TooLong { have: usize, want: usize },
     #[error("cannot encode URL into available bits")]

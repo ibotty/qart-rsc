@@ -12,11 +12,6 @@ pub struct BitWriter {
 }
 
 impl BitWriter {
-    pub fn reset(&mut self) {
-        self.bytes.clear();
-        self.nbit = 0;
-    }
-
     /// Number of bits written.
     pub fn bits(&self) -> usize {
         self.nbit
@@ -169,15 +164,6 @@ mod tests {
         b.write(0xff, 4);
         b.write(0, 4);
         assert_eq!(b.bytes(), [0xf0]);
-    }
-
-    #[test]
-    fn reset_clears() {
-        let mut b = BitWriter::default();
-        b.write(0xff, 8);
-        b.reset();
-        assert_eq!(b.bits(), 0);
-        assert!(b.bytes().is_empty());
     }
 
     #[test]

@@ -35,11 +35,13 @@ pub struct Options {
     rand: bool,
     only_data_bits: bool,
     seed: Option<u64>,
+    query_param: Option<String>,
 }
 
 impl Options {
     /// Options for a code that opens `url`; it decodes to `url`, `#` and
-    /// digits. The other settings have the defaults given on their setters.
+    /// digits, unless [`query_param`](Options::query_param) is set. The other
+    /// settings have the defaults given on their setters.
     pub fn new(url: impl Into<String>) -> Self {
         Self {
             url: url.into(),
@@ -52,6 +54,7 @@ impl Options {
             rand: false,
             only_data_bits: false,
             seed: None,
+            query_param: None,
         }
     }
 
@@ -115,6 +118,32 @@ impl Options {
     pub fn seed(mut self, seed: u64) -> Self {
         self.seed = Some(seed);
         self
+    }
+
+    /// Puts the digits in the query parameter `key` instead of after a `#`,
+    /// before any fragment of the URL, so that a fragment such as an anchor
+    /// keeps working: `https://example.com/a#top` becomes
+    /// `https://example.com/a?key=<digits>#top`, and `...?x=1#top` becomes
+    /// `...?x=1&key=<digits>#top`.
+    ///
+    /// Without this, a URL with a fragment makes [`encode`] fail. The server
+    /// receives the parameter, so it must ignore it.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidParam`] if `key` is empty or has characters other than
+    /// ASCII letters, digits and `._~-`.
+    pub fn query_param(mut self, key: impl Into<String>) -> Result<Self> {
+        let key = key.into();
+        if key.is_empty()
+            || !key
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || b"._~-".contains(&c))
+        {
+            return Err(Error::InvalidParam(key));
+        }
+        self.query_param = Some(key);
+        Ok(self)
     }
 }
 
@@ -233,6 +262,37 @@ struct PixInfo {
     controlled: bool,
 }
 
+/// Splits `url` into the text before and after the digits.
+fn split_url(url: &str, param: Option<&str>) -> Result<(String, String)> {
+    let (base, fragment) = match url.split_once('#') {
+        Some((base, fragment)) => (base, Some(fragment)),
+        None => (url, None),
+    };
+    match (param, fragment) {
+        (None, None) => Ok((format!("{base}#"), String::new())),
+        (None, Some(_)) => Err(Error::FragmentInUrl),
+        (Some(key), fragment) => {
+            let sep = if !base.contains('?') {
+                "?"
+            } else if base.ends_with(['?', '&']) {
+                ""
+            } else {
+                "&"
+            };
+            let suffix = fragment.map_or_else(String::new, |f| format!("#{f}"));
+            Ok((format!("{base}{sep}{key}="), suffix))
+        }
+    }
+}
+
+fn segments<'a>(prefix: &'a str, digits: &'a str, suffix: &'a str) -> Vec<Segment<'a>> {
+    let mut segs = vec![Segment::Bytes(prefix.as_bytes()), Segment::Numeric(digits)];
+    if !suffix.is_empty() {
+        segs.push(Segment::Bytes(suffix.as_bytes()));
+    }
+    segs
+}
+
 fn bit_of(bytes: &[u8], bi: usize) -> u32 {
     u32::from(bytes[bi / 8] >> (7 - bi % 8) & 1)
 }
@@ -285,22 +345,31 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
         }
     }
 
-    let url = format!("{}#", opts.url);
-    let url_seg = Segment::Bytes(url.as_bytes());
-    let (data, num) = loop {
-        // Count the fixed leading bits; the rest holds digits.
+    let (prefix, suffix) = split_url(&opts.url, opts.query_param.as_deref())?;
+    let data_for = |num: &[u8]| {
+        let digits = std::str::from_utf8(num).expect("digits are ASCII");
         let mut b = BitWriter::default();
-        url_seg.encode(&mut b, v);
-        Segment::Numeric("").encode(&mut b, v);
+        for seg in segments(&prefix, digits, &suffix) {
+            seg.encode(&mut b, v);
+        }
+        b.add_check_bytes(v, Level::L);
+        b.bytes().to_vec()
+    };
+    let (data, num) = loop {
+        // Count the fixed bits before and after the digits; the rest holds
+        // digits.
+        let mut b = BitWriter::default();
+        let segs = segments(&prefix, "", &suffix);
+        segs[0].encode(&mut b, v);
+        segs[1].encode(&mut b, v);
         let bbit = b.bits();
-        let dbit = data_bits.checked_sub(bbit).ok_or(Error::UrlTooLong)?;
+        for seg in &segs[2..] {
+            seg.encode(&mut b, v);
+        }
+        let dbit = data_bits.checked_sub(b.bits()).ok_or(Error::UrlTooLong)?;
         let mut num = vec![b'0'; dbit / 10 * 3];
 
-        b.reset();
-        url_seg.encode(&mut b, v);
-        Segment::Numeric(std::str::from_utf8(&num).expect("zeros are ASCII")).encode(&mut b, v);
-        b.add_check_bytes(v, Level::L);
-        let mut data = b.bytes().to_vec();
+        let mut data = data_for(&num);
         let mbit = bbit + dbit / 10 * 10;
 
         for pi in &mut info {
@@ -382,17 +451,11 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
     };
 
     debug_assert!(
-        {
-            let mut b = BitWriter::default();
-            url_seg.encode(&mut b, v);
-            Segment::Numeric(&num).encode(&mut b, v);
-            b.add_check_bytes(v, Level::L);
-            b.bytes() == data
-        },
+        data_for(num.as_bytes()) == data,
         "digits do not reproduce the chosen bytes"
     );
 
-    let code = plan.encode(&[url_seg, Segment::Numeric(&num)])?;
+    let code = plan.encode(&segments(&prefix, &num, &suffix))?;
     let size = plan.size();
     let mut controlled = vec![false; size * size];
     for pi in info.iter().filter(|pi| pi.controlled) {
@@ -401,7 +464,7 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
     Ok(Qart {
         code,
         controlled,
-        text: format!("{url}{num}"),
+        text: format!("{prefix}{num}{suffix}"),
     })
 }
 

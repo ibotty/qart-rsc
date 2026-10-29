@@ -137,3 +137,50 @@ fn modules_cover_the_code_row_by_row() {
         assert_eq!(m.controlled, q.controlled(m.x, m.y));
     }
 }
+
+#[test]
+fn query_param_places_digits_before_the_fragment() {
+    let cases = [
+        ("https://e.com/a", "https://e.com/a?q=", ""),
+        ("https://e.com/a?", "https://e.com/a?q=", ""),
+        ("https://e.com/a?x=1", "https://e.com/a?x=1&q=", ""),
+        (
+            "https://e.com/a#an-anchor",
+            "https://e.com/a?q=",
+            "#an-anchor",
+        ),
+        ("https://e.com/a?x=1#top", "https://e.com/a?x=1&q=", "#top"),
+        ("https://e.com/a#", "https://e.com/a?q=", "#"),
+    ];
+    for (url, prefix, suffix) in cases {
+        let opts = options(6, url).query_param("q").unwrap();
+        let q = run(&opts, 1);
+        assert_eq!(decode(q.code()), q.text(), "{url}");
+        let digits = q
+            .text()
+            .strip_prefix(prefix)
+            .and_then(|t| t.strip_suffix(suffix))
+            .unwrap_or_else(|| panic!("{url}: {}", q.text()));
+        assert!(digits.len() > 100, "{url}");
+        assert!(digits.bytes().all(|c| c.is_ascii_digit()), "{url}");
+    }
+}
+
+#[test]
+fn fragment_needs_query_param() {
+    let opts = options(6, "https://e.com/a#top");
+    let err = encode(&pjw(), &opts).unwrap_err();
+    assert!(matches!(err, qart::Error::FragmentInUrl));
+}
+
+#[test]
+fn query_param_is_validated() {
+    for key in ["", "a=b", "a&b", "a#b", "a?b", "a b", "é"] {
+        let err = Options::new(URL).query_param(key).unwrap_err();
+        assert!(
+            matches!(err, qart::Error::InvalidParam(k) if k == key),
+            "{key:?}"
+        );
+    }
+    assert!(Options::new(URL).query_param("a-B_c.d~1").is_ok());
+}
