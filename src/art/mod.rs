@@ -9,7 +9,7 @@ mod bitblock;
 
 use std::cmp::Reverse;
 
-use bitblock::BitBlock;
+use bitblock::{BitBlock, bit_of};
 use image::DynamicImage;
 use rand::rngs::StdRng;
 use rand::{Rng, RngExt, SeedableRng};
@@ -300,10 +300,6 @@ fn segments<'a>(prefix: &'a str, digits: &'a str, suffix: &'a str) -> Vec<Segmen
     segs
 }
 
-fn bit_of(bytes: &[u8], bi: usize) -> u32 {
-    u32::from(bytes[bi / 8] >> (7 - bi % 8) & 1)
-}
-
 /// Builds a QR code whose controllable modules follow `img`.
 ///
 /// Modules where the image has the most contrast are chosen first.
@@ -334,8 +330,8 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
     for (x, y, pix) in plan.pixels() {
         if matches!(pix.role, Role::Data | Role::Check) {
             let (targ, mut contrast) = target.sample(x, y, opts.dx, opts.dy);
-            if opts.rand && contrast.is_some() {
-                contrast = Some(
+            if opts.rand && contrast >= 0 {
+                contrast = i64::from(
                     rng.random_range(0..128)
                         + 64 * ((x + y) % 2) as u32
                         + 64 * ((x + y) % 3 % 2) as u32,
@@ -346,7 +342,7 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
                 y,
                 pix,
                 targ,
-                contrast: contrast.map_or(-1, i64::from),
+                contrast,
                 ..PixInfo::default()
             };
         }
@@ -362,22 +358,23 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
         b.add_check_bytes(v, Level::L);
         b.bytes().to_vec()
     };
-    let (data, num) = loop {
-        // Count the fixed bits before and after the digits; the rest holds
-        // digits.
-        let mut b = BitWriter::default();
-        let segs = segments(&prefix, "", &suffix);
-        segs[0].encode(&mut b, v);
-        segs[1].encode(&mut b, v);
-        let bbit = b.bits();
-        for seg in &segs[2..] {
-            seg.encode(&mut b, v);
-        }
-        let dbit = data_bits.checked_sub(b.bits()).ok_or(Error::UrlTooLong)?;
-        let mut num = vec![b'0'; dbit / 10 * 3];
 
+    // Count the fixed bits before and after the digits; the rest holds
+    // digits.
+    let mut b = BitWriter::default();
+    let segs = segments(&prefix, "", &suffix);
+    segs[0].encode(&mut b, v);
+    segs[1].encode(&mut b, v);
+    let bbit = b.bits();
+    for seg in &segs[2..] {
+        seg.encode(&mut b, v);
+    }
+    let dbit = data_bits.checked_sub(b.bits()).ok_or(Error::UrlTooLong)?;
+    let mbit = bbit + dbit / 10 * 10;
+
+    let (data, num) = loop {
+        let mut num = vec![b'0'; dbit / 10 * 3];
         let mut data = data_for(&num);
-        let mbit = bbit + dbit / 10 * 10;
 
         for pi in &mut info {
             pi.controlled = false;
@@ -391,10 +388,8 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
             let mut bb = BitBlock::new(&rs, &data_part[dr.clone()], &check_part[cr.clone()]);
 
             // Bits in [lo, hi) may change; the others are fixed.
-            let lo = (bbit as i64 - doff as i64).clamp(0, nd as i64 * 8) as usize;
-            let hi = ((mbit as i64 - doff as i64)
-                .min(nd as i64 * 8)
-                .max(lo as i64)) as usize;
+            let lo = bbit.saturating_sub(doff).min(nd * 8);
+            let hi = mbit.saturating_sub(doff).min(nd * 8).max(lo);
             for i in (0..lo).chain(hi..nd * 8) {
                 let cur = bb.bit(i);
                 assert!(bb.can_set(i, cur), "cannot preserve fixed bits");
@@ -437,7 +432,9 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
         // Read the digits back out of the chosen bits.
         let mut noops = 0;
         for i in 0..dbit / 10 {
-            let v = (0..10).fold(0, |v, j| v << 1 | bit_of(&data, bbit + 10 * i + j));
+            let v = (0..10).fold(0, |v, j| {
+                v << 1 | u32::from(bit_of(&data, bbit + 10 * i + j))
+            });
             if v >= 1000 {
                 // Not three digits. Bit 64 is set for sure; force it to zero
                 // next time, which breaks some check bits instead.

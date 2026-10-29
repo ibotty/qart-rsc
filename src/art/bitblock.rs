@@ -8,7 +8,7 @@
 
 use crate::gf256::RsEncoder;
 
-fn bit_of(row: &[u8], bi: usize) -> bool {
+pub(crate) fn bit_of(row: &[u8], bi: usize) -> bool {
     row[bi / 8] & (0x80 >> (bi % 8)) != 0
 }
 
