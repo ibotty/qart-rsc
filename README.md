@@ -1,7 +1,9 @@
 # qart-rsc
 
-[![CI](https://github.com/ibotty/qart-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ibotty/qart-rs/actions/workflows/ci.yml)
-[![zizmor](https://github.com/ibotty/qart-rs/actions/workflows/zizmor.yml/badge.svg)](https://github.com/ibotty/qart-rs/actions/workflows/zizmor.yml)
+[![crates.io](https://img.shields.io/crates/v/qart-rsc.svg)](https://crates.io/crates/qart-rsc)
+[![docs.rs](https://img.shields.io/docsrs/qart-rsc)](https://docs.rs/qart-rsc)
+[![CI](https://github.com/ibotty/qart-rsc/actions/workflows/ci.yml/badge.svg)](https://github.com/ibotty/qart-rsc/actions/workflows/ci.yml)
+[![zizmor](https://github.com/ibotty/qart-rsc/actions/workflows/zizmor.yml/badge.svg)](https://github.com/ibotty/qart-rsc/actions/workflows/zizmor.yml)
 [![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
 
 Embeds an image in a QR code that still scans. Rust port of the `qart`
