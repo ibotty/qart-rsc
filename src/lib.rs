@@ -3,7 +3,9 @@
 //! [QR Codes as Art](https://research.swtch.com/qart).
 //!
 //! The code decodes to the URL, a `#` and a run of digits; [`encode`] chooses
-//! the digits so that the modules resemble the image.
+//! the digits so that the modules resemble the image. A URL that already has
+//! a fragment is rejected, unless [`Options::query_param`] puts the digits in
+//! a query parameter before the fragment, as in `https://example.com/?k=<digits>#top`.
 //!
 #![doc = include_str!("../docs/example.svg")]
 //!

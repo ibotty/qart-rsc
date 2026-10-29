@@ -4,6 +4,11 @@
 //! The code carries a URL, `#` and a long run of digits. The digits are free:
 //! this module chooses them, together with the Reed-Solomon check bytes, so
 //! that the black and white modules resemble the image.
+//!
+//! The digits follow a `#`, so the URL must not have a fragment of its own.
+//! [`Options::query_param`] instead appends them as a query parameter before
+//! the fragment, which keeps the fragment working but sends the parameter to
+//! the server.
 
 mod bitblock;
 
