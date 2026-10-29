@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 use std::str::FromStr;
 
-use qart::{Options, encode};
+use qart_rsc::{Options, encode};
 
 const USAGE: &str = "usage: qart <image> <url> [-o out.png] [--version N] [--mask N] \
 [--param KEY] [--dx N] [--dy N] [--size N] [--rot 0..3] [--seed N] [--rand] [--only-data] \

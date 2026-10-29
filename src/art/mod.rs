@@ -201,7 +201,7 @@ impl Qart {
     /// ```
     /// use std::fmt::Write;
     ///
-    /// use qart::{Options, encode};
+    /// use qart_rsc::{Options, encode};
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// # let img = image::open("tests/pjw.png")?;

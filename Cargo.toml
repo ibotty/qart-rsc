@@ -1,5 +1,5 @@
 [package]
-name = "qart"
+name = "qart-rsc"
 version = "0.1.0"
 edition = "2024"
 description = "Embed an image in a QR code that still scans (port of rsc/qr's qart)"

@@ -1,5 +1,5 @@
 use image::DynamicImage;
-use qart::{Options, Qart, encode};
+use qart_rsc::{Options, Qart, encode};
 
 const URL: &str = "https://research.swtch.com/qart";
 
@@ -72,7 +72,7 @@ fn all_rotations_decode() {
 fn url_too_long_for_version() {
     let opts = options(1, "https://example.com/0123456789012345678901234567890");
     let err = encode(&pjw(), &opts).unwrap_err();
-    assert!(matches!(err, qart::Error::UrlTooLong));
+    assert!(matches!(err, qart_rsc::Error::UrlTooLong));
 }
 
 #[test]
@@ -164,7 +164,7 @@ fn query_param_places_digits_before_the_fragment() {
 fn fragment_needs_query_param() {
     let opts = options(6, "https://e.com/a#top");
     let err = encode(&pjw(), &opts).unwrap_err();
-    assert!(matches!(err, qart::Error::FragmentInUrl));
+    assert!(matches!(err, qart_rsc::Error::FragmentInUrl));
 }
 
 #[test]
@@ -172,7 +172,7 @@ fn query_param_is_validated() {
     for key in ["", "a=b", "a&b", "a#b", "a?b", "a b", "é"] {
         let err = Options::new(URL).query_param(key).unwrap_err();
         assert!(
-            matches!(err, qart::Error::InvalidParam(k) if k == key),
+            matches!(err, qart_rsc::Error::InvalidParam(k) if k == key),
             "{key:?}"
         );
     }
@@ -183,8 +183,8 @@ fn query_param_is_validated() {
 fn version_and_mask_are_validated() {
     for v in [0, 41] {
         let err = Options::new(URL).version(v).unwrap_err();
-        assert!(matches!(err, qart::Error::InvalidVersion(n) if n == v));
+        assert!(matches!(err, qart_rsc::Error::InvalidVersion(n) if n == v));
     }
     let err = Options::new(URL).mask(8).unwrap_err();
-    assert!(matches!(err, qart::Error::InvalidMask(8)));
+    assert!(matches!(err, qart_rsc::Error::InvalidMask(8)));
 }

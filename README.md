@@ -1,4 +1,4 @@
-# qart
+# qart-rsc
 
 [![CI](https://github.com/ibotty/qart-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ibotty/qart-rs/actions/workflows/ci.yml)
 [![zizmor](https://github.com/ibotty/qart-rs/actions/workflows/zizmor.yml/badge.svg)](https://github.com/ibotty/qart-rs/actions/workflows/zizmor.yml)
@@ -11,7 +11,7 @@ package of [rsc/qr](https://github.com/rsc/qr), described in Russ Cox's
 ![QR code made from the pjw image](docs/example.svg)
 
 ```rust
-use qart::{Options, encode};
+use qart_rsc::{Options, encode};
 
 let img = image::open("tests/pjw.png")?;
 let opts = Options::new("https://research.swtch.com/qart");
