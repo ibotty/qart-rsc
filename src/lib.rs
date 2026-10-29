@@ -30,20 +30,20 @@ mod render;
 mod target;
 
 pub use art::{Module, Options, Qart, encode};
-pub use coding::{Code, Mask, Rotation, Version};
+pub use coding::{Mask, Rotation, Version};
 
 #[cfg(test)]
 pub(crate) mod testutil {
     use image::DynamicImage;
 
-    use crate::Code;
+    use crate::Qart;
 
     pub fn pjw() -> DynamicImage {
         image::open(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/pjw.png")).unwrap()
     }
 
-    pub fn decode(code: &Code) -> String {
-        let img = code.to_image(8, 4);
+    pub fn decode(q: &Qart) -> String {
+        let img = q.to_image(8, 4);
         let mut prepared = rqrr::PreparedImage::prepare_from_greyscale(
             img.width() as usize,
             img.height() as usize,

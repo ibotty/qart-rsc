@@ -10,7 +10,7 @@ mod bitblock;
 use std::cmp::Reverse;
 
 use bitblock::BitBlock;
-use image::{DynamicImage, GrayImage};
+use image::DynamicImage;
 use rand::rngs::StdRng;
 use rand::{Rng, RngExt, SeedableRng};
 
@@ -163,7 +163,7 @@ impl Options {
 }
 
 /// The result of [`encode`].
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Qart {
     code: Code,
     /// Row-major, `code.size()` squared: modules whose color was chosen to
@@ -173,8 +173,10 @@ pub struct Qart {
 }
 
 impl Qart {
-    pub fn code(&self) -> &Code {
-        &self.code
+    /// Reports whether the module in column `x`, row `y` is black; false
+    /// outside the code.
+    pub fn black(&self, x: usize, y: usize) -> bool {
+        self.code.black(x, y)
     }
 
     /// What the code decodes to.
@@ -246,11 +248,6 @@ impl Qart {
                 controlled: self.controlled[i],
             }
         })
-    }
-
-    /// Renders the code; see [`Code::to_image`] for the arguments.
-    pub fn to_image(&self, scale: u32, border: u32) -> GrayImage {
-        self.code.to_image(scale, border)
     }
 }
 
@@ -500,7 +497,7 @@ mod tests {
     fn only_data_bits_leaves_check_modules() {
         let opts = options().only_data_bits(true);
         let q = encode(&pjw(), &opts).unwrap();
-        assert_eq!(decode(q.code()), q.text());
+        assert_eq!(decode(&q), q.text());
         let plan = Plan::new(opts.version, Level::L, opts.mask);
         let data_modules: HashSet<_> = plan
             .pixels()
@@ -532,7 +529,7 @@ mod tests {
                 if q.controlled(x, y) {
                     controlled += 1;
                     let (targ, _) = target.sample(x, y, opts.dx, opts.dy);
-                    matching += usize::from((targ < 128) == q.code().black(x, y));
+                    matching += usize::from((targ < 128) == q.black(x, y));
                 }
             }
         }

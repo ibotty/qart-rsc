@@ -3,11 +3,10 @@
 use image::{GrayImage, Luma, Rgba, RgbaImage};
 
 use crate::art::Qart;
-use crate::coding::Code;
 
 const WHITE: Rgba<u8> = Rgba([0xff; 4]);
 
-impl Code {
+impl Qart {
     /// Renders the code as a gray image, black modules 0 and white 255.
     ///
     /// # Arguments
@@ -25,9 +24,7 @@ impl Code {
             Luma([if black { 0 } else { 255 }])
         })
     }
-}
 
-impl Qart {
     /// Shows which modules were controlled: those are pure black or white,
     /// the others dark or light gray.
     ///
@@ -42,7 +39,7 @@ impl Qart {
         let mut img = RgbaImage::from_pixel(side, side, WHITE);
         for y in 0..size {
             for x in 0..size {
-                let px = match (self.controlled(x, y), self.code().black(x, y)) {
+                let px = match (self.controlled(x, y), self.black(x, y)) {
                     (true, true) => Rgba([0, 0, 0, 0xff]),
                     (true, false) => WHITE,
                     (false, true) => Rgba([0x3f, 0x3f, 0x3f, 0xff]),
