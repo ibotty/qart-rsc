@@ -27,13 +27,13 @@ pub struct BitBlock<'r> {
     /// pivots, each holding exactly one fixed bit.
     rows: Vec<Vec<u8>>,
     nfree: usize,
-    rs: &'r RsEncoder<'r>,
+    rs: &'r RsEncoder,
 }
 
 impl<'r> BitBlock<'r> {
     /// Starts from the codeword `data` followed by `check`, which must be
     /// the Reed-Solomon check bytes of `data`.
-    pub fn new(rs: &'r RsEncoder<'r>, data: &[u8], check: &[u8]) -> Self {
+    pub fn new(rs: &'r RsEncoder, data: &[u8], check: &[u8]) -> Self {
         let (nd, nc) = (data.len(), check.len());
         assert_eq!(nc, rs.check_bytes(), "check length mismatch");
         let mut b = Vec::with_capacity(nd + nc);
@@ -111,7 +111,6 @@ impl<'r> BitBlock<'r> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::gf256::QR_FIELD;
     use rand::seq::SliceRandom;
     use rand::{Rng, RngExt, SeedableRng, rngs::StdRng};
 
@@ -128,7 +127,7 @@ mod tests {
     #[test]
     fn fixes_all_data_bits() {
         let mut rng = StdRng::seed_from_u64(1);
-        let rs = RsEncoder::new(&QR_FIELD, NC);
+        let rs = RsEncoder::new(NC);
         let (data, check) = random_codeword(&mut rng, &rs);
         let mut bb = BitBlock::new(&rs, &data, &check);
 
@@ -150,7 +149,7 @@ mod tests {
     #[test]
     fn rank_is_data_bits() {
         let mut rng = StdRng::seed_from_u64(2);
-        let rs = RsEncoder::new(&QR_FIELD, NC);
+        let rs = RsEncoder::new(NC);
         let (data, check) = random_codeword(&mut rng, &rs);
         let mut bb = BitBlock::new(&rs, &data, &check);
 
@@ -165,7 +164,7 @@ mod tests {
     #[test]
     fn sets_check_bits() {
         let mut rng = StdRng::seed_from_u64(3);
-        let rs = RsEncoder::new(&QR_FIELD, NC);
+        let rs = RsEncoder::new(NC);
         let (data, check) = random_codeword(&mut rng, &rs);
         let mut bb = BitBlock::new(&rs, &data, &check);
         for bi in ND * 8..ND * 8 + 10 {
@@ -179,7 +178,7 @@ mod tests {
     #[test]
     fn already_correct_bit_keeps_codeword() {
         let mut rng = StdRng::seed_from_u64(4);
-        let rs = RsEncoder::new(&QR_FIELD, NC);
+        let rs = RsEncoder::new(NC);
         let (data, check) = random_codeword(&mut rng, &rs);
         let mut bb = BitBlock::new(&rs, &data, &check);
         let val = bb.bit(5);
@@ -192,7 +191,7 @@ mod tests {
     #[test]
     fn copy_out_round_trips() {
         let mut rng = StdRng::seed_from_u64(5);
-        let rs = RsEncoder::new(&QR_FIELD, NC);
+        let rs = RsEncoder::new(NC);
         let (data, check) = random_codeword(&mut rng, &rs);
         let mut bb = BitBlock::new(&rs, &data, &check);
         assert!(bb.can_set(0, !bb.bit(0)));
@@ -207,7 +206,7 @@ mod tests {
     #[test]
     #[should_panic(expected = "check length mismatch")]
     fn wrong_check_length_panics() {
-        let rs = RsEncoder::new(&QR_FIELD, NC);
+        let rs = RsEncoder::new(NC);
         BitBlock::new(&rs, &[0; ND], &[0; NC - 1]);
     }
 }

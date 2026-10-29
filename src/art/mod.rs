@@ -15,7 +15,7 @@ use rand::rngs::StdRng;
 use rand::{Rng, RngExt, SeedableRng};
 
 use crate::coding::{BitWriter, Code, Level, Mask, Pixel, Plan, Role, Rotation, Segment, Version};
-use crate::gf256::{QR_FIELD, RsEncoder};
+use crate::gf256::RsEncoder;
 use crate::target::Target;
 use crate::{Error, Result};
 
@@ -327,7 +327,7 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
     let nc = plan.check_bytes / blocks;
     let extra = plan.data_bytes - nd0 * blocks;
     let data_bits = plan.data_bytes * 8;
-    let rs = RsEncoder::new(&QR_FIELD, nc);
+    let rs = RsEncoder::new(nc);
 
     // Indexed by data/check bit number.
     let mut info = vec![PixInfo::default(); (plan.data_bytes + plan.check_bytes) * 8];

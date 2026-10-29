@@ -1,7 +1,7 @@
 //! Bit-level output and the supported data encodings.
 
 use super::{Level, Version};
-use crate::gf256::{QR_FIELD, RsEncoder};
+use crate::gf256::RsEncoder;
 
 /// Appends bits MSB first.
 #[derive(Default, Clone, Debug)]
@@ -75,7 +75,7 @@ impl BitWriter {
 
         let vi = v.info();
         let li = &vi.level[l as usize];
-        let rs = RsEncoder::new(&QR_FIELD, li.check);
+        let rs = RsEncoder::new(li.check);
         let mut db = nd / li.nblock;
         let extra = nd % li.nblock;
         let mut data = self.bytes();
@@ -231,7 +231,7 @@ mod tests {
         Segment::Bytes(b"hello").encode(&mut b, v(1));
         b.add_check_bytes(v(1), Level::L);
         assert_eq!(b.bytes().len(), 26);
-        let rs = RsEncoder::new(&QR_FIELD, 7);
+        let rs = RsEncoder::new(7);
         let mut want = [0; 7];
         rs.ecc(&b.bytes()[..19], &mut want);
         assert_eq!(&b.bytes()[19..], want);
@@ -245,7 +245,7 @@ mod tests {
         b.add_check_bytes(v(5), Level::Q);
         let bytes = b.bytes();
         assert_eq!(bytes.len(), 134);
-        let rs = RsEncoder::new(&QR_FIELD, 18);
+        let rs = RsEncoder::new(18);
         let mut want = [0; 18];
         let sizes = [15, 15, 16, 16];
         let mut off = 0;
