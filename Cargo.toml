@@ -2,7 +2,13 @@
 name = "qart"
 version = "0.1.0"
 edition = "2024"
+description = "Embed an image in a QR code that still scans (port of rsc/qr's qart)"
 license = "BSD-3-Clause"
+repository = "https://github.com/ibotty/qart-rs"
+readme = "README.md"
+keywords = ["qr", "qrcode", "qart", "image"]
+categories = ["multimedia::images", "graphics"]
+exclude = ["/.github", "/AGENTS.md", "/renovate.json"]
 
 [dependencies]
 image = { version = "0.25.10", default-features = false }
