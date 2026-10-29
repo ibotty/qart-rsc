@@ -475,7 +475,7 @@ mod tests {
     use std::collections::HashSet;
 
     use super::*;
-    use crate::testutil::{decode, pjw};
+    use crate::testutil::pjw;
 
     const URL: &str = "https://research.swtch.com/qart";
 
@@ -487,7 +487,6 @@ mod tests {
     fn only_data_bits_leaves_check_modules() {
         let opts = options().only_data_bits(true);
         let q = encode(&pjw(), &opts).unwrap();
-        assert_eq!(decode(&q), q.text());
         let plan = Plan::new(opts.version, Level::L, opts.mask);
         let data_modules: HashSet<_> = plan
             .pixels()

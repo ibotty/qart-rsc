@@ -22,13 +22,6 @@ impl BitWriter {
         &self.bytes
     }
 
-    /// Appends whole bytes; the bit count must be a multiple of 8.
-    pub fn append(&mut self, p: &[u8]) {
-        debug_assert!(self.nbit.is_multiple_of(8), "fractional byte");
-        self.bytes.extend_from_slice(p);
-        self.nbit += 8 * p.len();
-    }
-
     /// Appends the low `nbit` bits of `v`.
     pub fn write(&mut self, v: u32, nbit: usize) {
         for i in (0..nbit).rev() {
@@ -88,7 +81,8 @@ impl BitWriter {
             rs.ecc(block, chk);
             data = rest;
         }
-        self.append(&checks);
+        self.bytes.extend_from_slice(&checks);
+        self.nbit += 8 * checks.len();
         debug_assert_eq!(self.bytes.len(), vi.bytes, "qr: internal error");
     }
 }

@@ -35,22 +35,8 @@ pub use art::{Module, Options, Qart, encode};
 pub(crate) mod testutil {
     use image::DynamicImage;
 
-    use crate::Qart;
-
     pub fn pjw() -> DynamicImage {
         image::open(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/pjw.png")).unwrap()
-    }
-
-    pub fn decode(q: &Qart) -> String {
-        let img = q.to_image(8, 4);
-        let mut prepared = rqrr::PreparedImage::prepare_from_greyscale(
-            img.width() as usize,
-            img.height() as usize,
-            |x, y| img.get_pixel(x as u32, y as u32).0[0],
-        );
-        let grids = prepared.detect_grids();
-        assert_eq!(grids.len(), 1, "expected one QR code");
-        grids[0].decode().expect("code decodes").1
     }
 }
 

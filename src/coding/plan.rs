@@ -300,18 +300,15 @@ impl Plan {
 
         // The last few blocks have an extra data byte.
         let mut data_blocks = Vec::with_capacity(nblock);
-        let mut check_blocks = Vec::with_capacity(nblock);
-        let (mut data_rest, mut check_rest) = (&data[..], &check[..]);
+        let mut data_rest = &data[..];
         for i in 0..nblock {
             let nd = nde + usize::from(i >= nblock - extra);
             let (b, r) = data_rest.split_at(nd * 8);
             data_blocks.push(b);
             data_rest = r;
-            let (b, r) = check_rest.split_at(ne * 8);
-            check_blocks.push(b);
-            check_rest = r;
         }
-        debug_assert!(data_rest.is_empty() && check_rest.is_empty());
+        debug_assert!(data_rest.is_empty());
+        let check_blocks: Vec<&[Pixel]> = check.chunks(ne * 8).collect();
 
         // Take the first byte of each block, then the second, and so on;
         // then the check bytes the same way.
