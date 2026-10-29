@@ -6,7 +6,7 @@
 //! that the black and white modules resemble the image.
 //!
 //! The digits follow a `#`, so the URL must not have a fragment of its own.
-//! [`Options::query_param`] instead appends them as a query parameter before
+//! [`Encoder::query_param`] instead appends them as a query parameter before
 //! the fragment, which keeps the fragment working but sends the parameter to
 //! the server.
 
@@ -27,42 +27,44 @@ use crate::{Error, Result};
 /// Contrast given to modules that must be zero bits, so they are chosen first.
 const HARD_ZERO_CONTRAST: i64 = 1_000_000_000 >> 8;
 
-/// Settings for [`encode`], made with [`Options::new`] and the setters.
+/// Settings for encoding an image, made with [`Qart::from_image`] and the
+/// setters. [`Encoder::encode`] makes the code.
 #[derive(Clone, Debug)]
-pub struct Options {
-    url: String,
+pub struct Encoder<'a> {
+    img: &'a DynamicImage,
     version: Version,
     mask: Mask,
     dx: i64,
     dy: i64,
-    size: i64,
+    scale_margin: i64,
     rotation: Rotation,
-    rand: bool,
-    only_data_bits: bool,
+    random_priority: bool,
+    data_only: bool,
     seed: Option<u64>,
     query_param: Option<String>,
 }
 
-impl Options {
-    /// Options for a code that opens `url`; it decodes to `url`, `#` and
-    /// digits, unless [`query_param`](Options::query_param) is set. The other
-    /// settings have the defaults given on their setters.
-    pub fn new(url: impl Into<String>) -> Self {
-        Self {
-            url: url.into(),
+impl Qart {
+    /// Starts encoding `img`. The settings have the defaults given on their
+    /// setters.
+    pub fn from_image(img: &DynamicImage) -> Encoder<'_> {
+        Encoder {
+            img,
             version: Version::try_from(6).expect("6 is a valid version"),
             mask: Mask::try_from(2).expect("2 is a valid mask"),
             dx: 4,
             dy: 4,
-            size: 0,
+            scale_margin: 0,
             rotation: Rotation::R0,
-            rand: false,
-            only_data_bits: false,
+            random_priority: false,
+            data_only: false,
             seed: None,
             query_param: None,
         }
     }
+}
 
+impl Encoder<'_> {
     /// Sets the QR version, a number from 1 to 40. Defaults to 6.
     ///
     /// # Errors
@@ -96,8 +98,8 @@ impl Options {
     /// Sets the amount added to the side of the code to get the side of the
     /// scaled image. Defaults to 0.
     #[must_use]
-    pub fn size(mut self, size: i64) -> Self {
-        self.size = size;
+    pub fn scale_margin(mut self, margin: i64) -> Self {
+        self.scale_margin = margin;
         self
     }
 
@@ -115,16 +117,16 @@ impl Options {
     /// Chooses modules by random priority instead of image contrast. Defaults
     /// to false.
     #[must_use]
-    pub fn rand(mut self, rand: bool) -> Self {
-        self.rand = rand;
+    pub fn random_priority(mut self, random_priority: bool) -> Self {
+        self.random_priority = random_priority;
         self
     }
 
     /// Only controls data modules, leaving the check modules alone. Defaults
     /// to false.
     #[must_use]
-    pub fn only_data_bits(mut self, only_data_bits: bool) -> Self {
-        self.only_data_bits = only_data_bits;
+    pub fn data_only(mut self, data_only: bool) -> Self {
+        self.data_only = data_only;
         self
     }
 
@@ -141,7 +143,7 @@ impl Options {
     /// `https://example.com/a?key=<digits>#top`, and `...?x=1#top` becomes
     /// `...?x=1&key=<digits>#top`.
     ///
-    /// Without this, a URL with a fragment makes [`encode`] fail. The server
+    /// Without this, a URL with a fragment makes [`encode`](Encoder::encode) fail. The server
     /// receives the parameter, so it must ignore it.
     ///
     /// # Errors
@@ -162,7 +164,7 @@ impl Options {
     }
 }
 
-/// The result of [`encode`].
+/// A QR code made by [`Encoder::encode`].
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Qart {
     code: Code,
@@ -206,11 +208,11 @@ impl Qart {
     /// ```
     /// use std::fmt::Write;
     ///
-    /// use qart_rsc::{Options, encode};
+    /// use qart_rsc::Qart;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// # let img = image::open("tests/pjw.png")?;
-    /// let q = encode(&img, &Options::new("https://example.com"))?;
+    /// let q = Qart::from_image(&img).encode("https://example.com")?;
     /// let n = q.size();
     /// let black = || q.modules().filter(|m| m.black);
     ///
@@ -305,20 +307,30 @@ fn segments<'a>(prefix: &'a str, digits: &'a str, suffix: &'a str) -> Vec<Segmen
     segs
 }
 
-/// Builds a QR code whose controllable modules follow `img`.
-///
-/// Modules where the image has the most contrast are chosen first.
-pub fn encode(img: &DynamicImage, opts: &Options) -> Result<Qart> {
-    let mut rng = match opts.seed {
-        Some(seed) => StdRng::seed_from_u64(seed),
-        None => StdRng::from_rng(&mut rand::rng()),
-    };
-    encode_with(img, opts, &mut rng)
+impl Encoder<'_> {
+    /// Builds a QR code for `url` whose controllable modules follow the
+    /// image.
+    ///
+    /// Modules where the image has the most contrast are chosen first.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::FragmentInUrl`] if `url` has a fragment and no
+    /// [`query_param`](Encoder::query_param) is set, and
+    /// [`Error::UrlTooLong`] if `url` does not fit the version.
+    pub fn encode(&self, url: impl AsRef<str>) -> Result<Qart> {
+        let mut rng = match self.seed {
+            Some(seed) => StdRng::seed_from_u64(seed),
+            None => StdRng::from_rng(&mut rand::rng()),
+        };
+        encode_with(self, url.as_ref(), &mut rng)
+    }
 }
 
-fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result<Qart> {
+fn encode_with(opts: &Encoder<'_>, url: &str, rng: &mut impl Rng) -> Result<Qart> {
+    let img = opts.img;
     let v = opts.version;
-    let side = (v.size() as i64 + opts.size).clamp(1, i64::from(u32::MAX)) as u32;
+    let side = (v.size() as i64 + opts.scale_margin).clamp(1, i64::from(u32::MAX)) as u32;
     let target = Target::from_image(img, side);
     let mut plan = Plan::new(v, Level::L, opts.mask);
     plan.rotate(opts.rotation);
@@ -335,7 +347,7 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
     for (x, y, pix) in plan.pixels() {
         if matches!(pix.role, Role::Data | Role::Check) {
             let (targ, mut contrast) = target.sample(x, y, opts.dx, opts.dy);
-            if opts.rand && contrast >= 0 {
+            if opts.random_priority && contrast >= 0 {
                 contrast = i64::from(
                     rng.random_range(0..128)
                         + 64 * ((x + y) % 2) as u32
@@ -353,7 +365,7 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
         }
     }
 
-    let (prefix, suffix) = split_url(&opts.url, opts.query_param.as_deref())?;
+    let (prefix, suffix) = split_url(url, opts.query_param.as_deref())?;
     let data_for = |num: &[u8]| {
         let digits = std::str::from_utf8(num).expect("digits are ASCII");
         let mut b = BitWriter::default();
@@ -401,7 +413,7 @@ fn encode_with(img: &DynamicImage, opts: &Options, rng: &mut impl Rng) -> Result
             }
 
             // Try the bits with the most contrast first.
-            let checks = if opts.only_data_bits { 0 } else { nc * 8 };
+            let checks = if opts.data_only { 0 } else { nc * 8 };
             let mut order: Vec<(usize, i64)> = (doff + lo..doff + hi)
                 .chain((0..checks).map(|i| data_bits + coff + i))
                 .map(|off| {
@@ -484,15 +496,12 @@ mod tests {
 
     const URL: &str = "https://research.swtch.com/qart";
 
-    fn options() -> Options {
-        Options::new(URL).seed(1)
-    }
-
     #[test]
-    fn only_data_bits_leaves_check_modules() {
-        let opts = options().only_data_bits(true);
-        let q = encode(&pjw(), &opts).unwrap();
-        let plan = Plan::new(opts.version, Level::L, opts.mask);
+    fn data_only_leaves_check_modules() {
+        let img = pjw();
+        let enc = Qart::from_image(&img).seed(1).data_only(true);
+        let q = enc.encode(URL).unwrap();
+        let plan = Plan::new(enc.version, Level::L, enc.mask);
         let data_modules: HashSet<_> = plan
             .pixels()
             .filter(|(_, _, pix)| pix.role == Role::Data)
@@ -512,17 +521,18 @@ mod tests {
 
     #[test]
     fn controlled_modules_follow_the_image() {
-        let opts = options();
-        let q = encode(&pjw(), &opts).unwrap();
+        let img = pjw();
+        let enc = Qart::from_image(&img).seed(1);
+        let q = enc.encode(URL).unwrap();
         let size = q.size();
-        let target = Target::from_image(&pjw(), (size as i64 + opts.size) as u32);
+        let target = Target::from_image(&img, (size as i64 + enc.scale_margin) as u32);
 
         let (mut controlled, mut matching) = (0, 0);
         for y in 0..size {
             for x in 0..size {
                 if q.controlled(x, y) {
                     controlled += 1;
-                    let (targ, _) = target.sample(x, y, opts.dx, opts.dy);
+                    let (targ, _) = target.sample(x, y, enc.dx, enc.dy);
                     matching += usize::from((targ < 128) == q.black(x, y));
                 }
             }

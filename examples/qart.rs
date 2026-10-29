@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 use std::str::FromStr;
 
-use qart_rsc::{Options, encode};
+use qart_rsc::Qart;
 
 const USAGE: &str = "usage: qart <image> <url> [-o out.png] [--version N] [--mask N] \
 [--param KEY] [--dx N] [--dy N] [--size N] [--rot 0..3] [--seed N] [--rand] [--only-data] \
@@ -80,22 +80,22 @@ fn parse_args() -> Result<Args, String> {
 }
 
 fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
-    let mut opts = Options::new(args.url)
+    let img = image::open(&args.image)?;
+    let mut enc = Qart::from_image(&img)
         .version(args.version)?
         .mask(args.mask)?
         .offset(args.dx, args.dy)
-        .size(args.size)
+        .scale_margin(args.size)
         .rotation(args.rot)?
-        .rand(args.rand)
-        .only_data_bits(args.only_data);
+        .random_priority(args.rand)
+        .data_only(args.only_data);
     if let Some(seed) = args.seed {
-        opts = opts.seed(seed);
+        enc = enc.seed(seed);
     }
     if let Some(key) = args.param {
-        opts = opts.query_param(key)?;
+        enc = enc.query_param(key)?;
     }
-    let img = image::open(&args.image)?;
-    let q = encode(&img, &opts)?;
+    let q = enc.encode(&args.url)?;
     q.to_image(args.scale, 4).save(&args.out)?;
     if let Some(path) = &args.control {
         q.control_image(args.scale, 4).save(path)?;

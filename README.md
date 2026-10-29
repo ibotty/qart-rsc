@@ -10,25 +10,28 @@ Embeds an image in a QR code that still scans. Rust port of the `qart`
 package of [rsc/qr](https://github.com/rsc/qr), described in Russ Cox's
 [QR Codes as Art](https://research.swtch.com/qart).
 
-The code decodes to the URL, a `#` and a long run of digits that the encoder
-picks to draw the image. A URL with a fragment of its own is rejected. Use
-`Options::query_param` (`--param KEY` in the example) to put the digits in a
-query parameter before the fragment instead, for example
-`https://example.com/?k=<digits>#top`. The server receives the parameter, so
-it must ignore it.
-
 ![QR code made from the pjw image](docs/example.svg)
 
 ```rust
-use qart_rsc::{Options, encode};
+use qart_rsc::{Qart, image};
 
 let img = image::open("tests/pjw.png")?;
-let opts = Options::new("https://research.swtch.com/qart");
-let q = encode(&img, &opts)?;
+let q = Qart::from_image(&img)
+    .version(5)?
+    .encode("https://research.swtch.com/qart")?;
 q.to_image(8, 4).save("out.png")?;
 q.control_image(8, 4).save("control.png")?;
 println!("{}", q.text());
 ```
+
+The code decodes to the URL, a `#` and a long run of digits that the encoder
+picks to draw the image. A URL with a fragment of its own is rejected. Use
+`Encoder::query_param` (`--param KEY` in the example) to put the digits in a
+query parameter before the fragment instead, for example
+`https://example.com/?k=<digits>#top`. The server receives the parameter, so
+it must ignore it.
+
+The `image` crate is re-exported.
 
 Command line:
 
