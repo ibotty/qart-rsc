@@ -8,7 +8,7 @@ repository = "https://github.com/ibotty/qart-rsc"
 readme = "README.md"
 keywords = ["qr", "qrcode", "qart", "image"]
 categories = ["multimedia::images", "graphics"]
-exclude = ["/.github", "/AGENTS.md", "/renovate.json"]
+exclude = ["/.github", "/AGENTS.md", "/release.toml", "/renovate.json"]
 
 [dependencies]
 image = { version = "0.25.10", default-features = false }
