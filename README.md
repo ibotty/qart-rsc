@@ -31,7 +31,9 @@ query parameter before the fragment instead, for example
 `https://example.com/?k=<digits>#top`. The server receives the parameter, so
 it must ignore it.
 
-The `image` crate is re-exported.
+The `image` crate is re-exported. This crate has no default features; its
+features of the same names as those of `image` (`png`, `jpeg`, `webp`, ...)
+turn on the matching image format.
 
 Command line:
 

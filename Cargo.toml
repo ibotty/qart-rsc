@@ -15,6 +15,25 @@ image = { version = "0.25.10", default-features = false }
 rand = "0.10.3"
 thiserror = "2.0.21"
 
+[features]
+avif = ["image/avif"]
+bmp = ["image/bmp"]
+dds = ["image/dds"]
+exr = ["image/exr"]
+ff = ["image/ff"]
+gif = ["image/gif"]
+hdr = ["image/hdr"]
+ico = ["image/ico"]
+jpeg = ["image/jpeg"]
+png = ["image/png"]
+pnm = ["image/pnm"]
+qoi = ["image/qoi"]
+tga = ["image/tga"]
+tiff = ["image/tiff"]
+webp = ["image/webp"]
+rayon = ["image/rayon"]
+default-formats = ["image/default-formats"]
+
 [dev-dependencies]
 image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "gif"] }
 qrcodegen = "1.8.0"

@@ -28,7 +28,8 @@
 //!
 //! [`Qart::modules`] iterates over the modules, for other output formats.
 //!
-//! The `image` crate is re-exported.
+//! The `image` crate is re-exported. Its image formats are behind the
+//! features of this crate with the same names, none of them on by default.
 
 mod art;
 mod coding;
