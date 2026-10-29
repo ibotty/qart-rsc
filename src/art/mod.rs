@@ -22,33 +22,24 @@ use crate::{Error, Result};
 /// Contrast given to modules that must be zero bits, so they are chosen first.
 const HARD_ZERO_CONTRAST: i64 = 1_000_000_000 >> 8;
 
+/// Settings for [`encode`], made with [`Options::new`] and the setters.
 #[derive(Clone, Debug)]
 pub struct Options {
-    /// The URL the code opens; the code decodes to `url`, `#` and digits.
-    pub url: String,
-    /// Defaults to 6.
-    pub version: Version,
-    /// Defaults to 2.
-    pub mask: Mask,
-    /// Horizontal offset in modules: the module in column `x` takes its color
-    /// from image column `x + dx`, so a positive value moves the image left.
-    /// Defaults to 4, as in the original's UI.
-    pub dx: i64,
-    /// Vertical offset in modules, like `dx` for rows. Defaults to 4.
-    pub dy: i64,
-    /// Added to the side of the code to get the side of the scaled image.
-    pub size: i64,
-    pub rotation: Rotation,
-    /// Choose modules by random priority instead of image contrast.
-    pub rand: bool,
-    /// Only control data modules, leaving the check modules alone.
-    pub only_data_bits: bool,
-    /// Seed for the random choices; `None` draws fresh entropy.
-    pub seed: Option<u64>,
+    url: String,
+    version: Version,
+    mask: Mask,
+    dx: i64,
+    dy: i64,
+    size: i64,
+    rotation: Rotation,
+    rand: bool,
+    only_data_bits: bool,
+    seed: Option<u64>,
 }
 
 impl Options {
-    /// Options for `url`, with the other fields at their defaults.
+    /// Options for a code that opens `url`; it decodes to `url`, `#` and
+    /// digits. The other settings have the defaults given on their setters.
     pub fn new(url: impl Into<String>) -> Self {
         Self {
             url: url.into(),
@@ -62,6 +53,68 @@ impl Options {
             only_data_bits: false,
             seed: None,
         }
+    }
+
+    /// Sets the QR version. Defaults to 6.
+    #[must_use]
+    pub fn version(mut self, version: Version) -> Self {
+        self.version = version;
+        self
+    }
+
+    /// Sets the data mask. Defaults to 2.
+    #[must_use]
+    pub fn mask(mut self, mask: Mask) -> Self {
+        self.mask = mask;
+        self
+    }
+
+    /// Sets the offset of the image in modules: the module in column `x` and
+    /// row `y` takes its color from image pixel `(x + dx, y + dy)`, so a
+    /// positive offset moves the image left and up. Defaults to 4 for both,
+    /// as in the original's UI.
+    #[must_use]
+    pub fn offset(mut self, dx: i64, dy: i64) -> Self {
+        (self.dx, self.dy) = (dx, dy);
+        self
+    }
+
+    /// Sets the amount added to the side of the code to get the side of the
+    /// scaled image. Defaults to 0.
+    #[must_use]
+    pub fn size(mut self, size: i64) -> Self {
+        self.size = size;
+        self
+    }
+
+    /// Sets the rotation of the code layout. Defaults to none.
+    #[must_use]
+    pub fn rotation(mut self, rotation: Rotation) -> Self {
+        self.rotation = rotation;
+        self
+    }
+
+    /// Chooses modules by random priority instead of image contrast. Defaults
+    /// to false.
+    #[must_use]
+    pub fn rand(mut self, rand: bool) -> Self {
+        self.rand = rand;
+        self
+    }
+
+    /// Only controls data modules, leaving the check modules alone. Defaults
+    /// to false.
+    #[must_use]
+    pub fn only_data_bits(mut self, only_data_bits: bool) -> Self {
+        self.only_data_bits = only_data_bits;
+        self
+    }
+
+    /// Seeds the random choices. Without a seed, fresh entropy is drawn.
+    #[must_use]
+    pub fn seed(mut self, seed: u64) -> Self {
+        self.seed = Some(seed);
+        self
     }
 }
 
@@ -362,18 +415,12 @@ mod tests {
     const URL: &str = "https://research.swtch.com/qart";
 
     fn options() -> Options {
-        Options {
-            seed: Some(1),
-            ..Options::new(URL)
-        }
+        Options::new(URL).seed(1)
     }
 
     #[test]
     fn only_data_bits_leaves_check_modules() {
-        let opts = Options {
-            only_data_bits: true,
-            ..options()
-        };
+        let opts = options().only_data_bits(true);
         let q = encode(&pjw(), &opts).unwrap();
         assert_eq!(decode(q.code()), q.text());
         let plan = Plan::new(opts.version, Level::L, opts.mask);

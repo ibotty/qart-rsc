@@ -8,10 +8,7 @@ fn pjw() -> DynamicImage {
 }
 
 fn options(version: u8, url: &str) -> Options {
-    Options {
-        version: Version::new(version).unwrap(),
-        ..Options::new(url)
-    }
+    Options::new(url).version(Version::new(version).unwrap())
 }
 
 fn decode(code: &Code) -> String {
@@ -27,11 +24,7 @@ fn decode(code: &Code) -> String {
 }
 
 fn run(opts: &Options, seed: u64) -> Qart {
-    let opts = Options {
-        seed: Some(seed),
-        ..opts.clone()
-    };
-    encode(&pjw(), &opts).unwrap()
+    encode(&pjw(), &opts.clone().seed(seed)).unwrap()
 }
 
 #[test]
@@ -69,10 +62,7 @@ fn all_versions_decode() {
 #[test]
 fn all_rotations_decode() {
     for rotation in [Rotation::R0, Rotation::R90, Rotation::R180, Rotation::R270] {
-        let opts = Options {
-            rotation,
-            ..options(6, URL)
-        };
+        let opts = options(6, URL).rotation(rotation);
         let q = run(&opts, 3);
         assert_eq!(decode(q.code()), q.text(), "{rotation:?}");
     }
@@ -87,10 +77,7 @@ fn url_too_long_for_version() {
 
 #[test]
 fn rand_decodes_and_depends_on_seed() {
-    let opts = Options {
-        rand: true,
-        ..options(6, URL)
-    };
+    let opts = options(6, URL).rand(true);
     let (a, b) = (run(&opts, 1), run(&opts, 2));
     assert_eq!(decode(a.code()), a.text());
     assert_eq!(decode(b.code()), b.text());
