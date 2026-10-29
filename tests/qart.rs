@@ -91,6 +91,7 @@ fn control_image_marks_controlled_modules() {
     let img = q.control_image(scale, border);
     let side = (q.size() as u32 + 2 * border) * scale;
     assert_eq!(img.dimensions(), (side, side));
+    assert_eq!(img.get_pixel(side - 1, side - 1).0, [255]);
     let size = q.size();
     let mut seen = [false; 2];
     for y in 0..size {
@@ -98,17 +99,10 @@ fn control_image_marks_controlled_modules() {
             let px = img.get_pixel((x as u32 + border) * scale, (y as u32 + border) * scale);
             if q.controlled(x, y) {
                 let black = q.black(x, y);
-                assert_eq!(px.0, if black { [0, 0, 0, 255] } else { [255; 4] });
+                assert_eq!(px.0, if black { [0] } else { [255] });
                 seen[usize::from(black)] = true;
             } else {
-                assert_eq!(
-                    px.0,
-                    if q.black(x, y) {
-                        [0x3f, 0x3f, 0x3f, 255]
-                    } else {
-                        [0xbf, 0xbf, 0xbf, 255]
-                    }
-                );
+                assert_eq!(px.0, if q.black(x, y) { [0x3f] } else { [0xbf] });
             }
         }
     }

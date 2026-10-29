@@ -1,10 +1,8 @@
 //! Image output for [`Qart`].
 
-use image::{GrayImage, Luma, Rgba, RgbaImage};
+use image::{GrayImage, Luma};
 
 use crate::art::Qart;
-
-const WHITE: Rgba<u8> = Rgba([0xff; 4]);
 
 impl Qart {
     /// Renders the code as a gray image, black modules 0 and white 255.
@@ -15,14 +13,7 @@ impl Qart {
     /// * `border` - White modules added on each side; the QR specification
     ///   asks for 4.
     pub fn to_image(&self, scale: u32, border: u32) -> GrayImage {
-        let side = (self.size() as u32 + 2 * border) * scale;
-        GrayImage::from_fn(side, side, |x, y| {
-            let (mx, my) = (x / scale, y / scale);
-            let black = mx >= border
-                && my >= border
-                && self.black((mx - border) as usize, (my - border) as usize);
-            Luma([if black { 0 } else { 255 }])
-        })
+        self.render(scale, border, |x, y| if self.black(x, y) { 0 } else { 255 })
     }
 
     /// Shows which modules were controlled: those are pure black or white,
@@ -33,26 +24,29 @@ impl Qart {
     /// * `scale` - Pixels per module.
     /// * `border` - White modules added on each side; the QR specification
     ///   asks for 4.
-    pub fn control_image(&self, scale: u32, border: u32) -> RgbaImage {
-        let size = self.size();
-        let side = (size as u32 + 2 * border) * scale;
-        let mut img = RgbaImage::from_pixel(side, side, WHITE);
-        for y in 0..size {
-            for x in 0..size {
-                let px = match (self.controlled(x, y), self.black(x, y)) {
-                    (true, true) => Rgba([0, 0, 0, 0xff]),
-                    (true, false) => WHITE,
-                    (false, true) => Rgba([0x3f, 0x3f, 0x3f, 0xff]),
-                    (false, false) => Rgba([0xbf, 0xbf, 0xbf, 0xff]),
-                };
-                let (x0, y0) = (x as u32 + border, y as u32 + border);
-                for dy in 0..scale {
-                    for dx in 0..scale {
-                        img.put_pixel(x0 * scale + dx, y0 * scale + dy, px);
-                    }
-                }
+    pub fn control_image(&self, scale: u32, border: u32) -> GrayImage {
+        self.render(scale, border, |x, y| {
+            match (self.controlled(x, y), self.black(x, y)) {
+                (true, true) => 0x00,
+                (true, false) => 0xff,
+                (false, true) => 0x3f,
+                (false, false) => 0xbf,
             }
-        }
-        img
+        })
+    }
+
+    fn render(&self, scale: u32, border: u32, gray: impl Fn(usize, usize) -> u8) -> GrayImage {
+        let side = (self.size() as u32 + 2 * border) * scale;
+        GrayImage::from_fn(side, side, |x, y| {
+            let (mx, my) = (x / scale, y / scale);
+            let module = (mx.checked_sub(border), my.checked_sub(border));
+            let size = self.size();
+            Luma([match module {
+                (Some(mx), Some(my)) if (mx as usize) < size && (my as usize) < size => {
+                    gray(mx as usize, my as usize)
+                }
+                _ => 255,
+            }])
+        })
     }
 }
