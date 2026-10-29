@@ -1,5 +1,9 @@
 # qart
 
+[![CI](https://github.com/ibotty/qart-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/ibotty/qart-rs/actions/workflows/ci.yml)
+[![zizmor](https://github.com/ibotty/qart-rs/actions/workflows/zizmor.yml/badge.svg)](https://github.com/ibotty/qart-rs/actions/workflows/zizmor.yml)
+[![License: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](LICENSE)
+
 Embeds an image in a QR code that still scans. Rust port of the `qart`
 package of [rsc/qr](https://github.com/rsc/qr), described in Russ Cox's
 [QR Codes as Art](https://research.swtch.com/qart).
