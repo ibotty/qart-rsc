@@ -49,6 +49,7 @@ pub(crate) mod testutil {
 }
 
 #[derive(Debug, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     #[error("invalid QR version {0}")]
     InvalidVersion(u8),
