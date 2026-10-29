@@ -1,7 +1,7 @@
 use std::process::ExitCode;
 use std::str::FromStr;
 
-use qart::{Mask, Options, Rotation, Version, encode};
+use qart::{Options, Rotation, encode};
 
 const USAGE: &str = "usage: qart <image> <url> [-o out.png] [--version N] [--mask N] \
 [--param KEY] [--dx N] [--dy N] [--size N] [--rot 0..3] [--seed N] [--rand] [--only-data] \
@@ -81,8 +81,8 @@ fn parse_args() -> Result<Args, String> {
 
 fn run(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     let mut opts = Options::new(args.url)
-        .version(Version::new(args.version)?)
-        .mask(Mask::new(args.mask)?)
+        .version(args.version)?
+        .mask(args.mask)?
         .offset(args.dx, args.dy)
         .size(args.size)
         .rotation(Rotation::new(args.rot)?)

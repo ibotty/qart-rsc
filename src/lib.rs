@@ -79,4 +79,10 @@ pub enum Error {
     Image(#[from] image::ImageError),
 }
 
+impl From<std::convert::Infallible> for Error {
+    fn from(e: std::convert::Infallible) -> Self {
+        match e {}
+    }
+}
+
 pub type Result<T> = std::result::Result<T, Error>;

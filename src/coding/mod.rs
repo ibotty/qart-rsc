@@ -56,6 +56,14 @@ impl Version {
     }
 }
 
+impl TryFrom<u8> for Version {
+    type Error = Error;
+
+    fn try_from(v: u8) -> Result<Version> {
+        Version::new(v)
+    }
+}
+
 impl std::fmt::Display for Version {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
@@ -105,6 +113,14 @@ impl Mask {
             7 => (i * j % 3 + (i + j) % 2) % 2 == 0,
             _ => unreachable!("mask is below 8"),
         }
+    }
+}
+
+impl TryFrom<u8> for Mask {
+    type Error = Error;
+
+    fn try_from(m: u8) -> Result<Mask> {
+        Mask::new(m)
     }
 }
 

@@ -58,18 +58,33 @@ impl Options {
         }
     }
 
-    /// Sets the QR version. Defaults to 6.
-    #[must_use]
-    pub fn version(mut self, version: Version) -> Self {
-        self.version = version;
-        self
+    /// Sets the QR version, a [`Version`] or a number from 1 to 40. Defaults
+    /// to 6.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidVersion`] if the number is out of range.
+    pub fn version<V>(mut self, version: V) -> Result<Self>
+    where
+        V: TryInto<Version>,
+        Error: From<V::Error>,
+    {
+        self.version = version.try_into()?;
+        Ok(self)
     }
 
-    /// Sets the data mask. Defaults to 2.
-    #[must_use]
-    pub fn mask(mut self, mask: Mask) -> Self {
-        self.mask = mask;
-        self
+    /// Sets the data mask, a [`Mask`] or a number from 0 to 7. Defaults to 2.
+    ///
+    /// # Errors
+    ///
+    /// [`Error::InvalidMask`] if the number is out of range.
+    pub fn mask<M>(mut self, mask: M) -> Result<Self>
+    where
+        M: TryInto<Mask>,
+        Error: From<M::Error>,
+    {
+        self.mask = mask.try_into()?;
+        Ok(self)
     }
 
     /// Sets the offset of the image in modules: the module in column `x` and

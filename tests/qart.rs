@@ -1,5 +1,5 @@
 use image::DynamicImage;
-use qart::{Code, Options, Qart, Rotation, Version, encode};
+use qart::{Code, Mask, Options, Qart, Rotation, Version, encode};
 
 const URL: &str = "https://research.swtch.com/qart";
 
@@ -8,7 +8,7 @@ fn pjw() -> DynamicImage {
 }
 
 fn options(version: u8, url: &str) -> Options {
-    Options::new(url).version(Version::new(version).unwrap())
+    Options::new(url).version(version).unwrap()
 }
 
 fn decode(code: &Code) -> String {
@@ -183,4 +183,26 @@ fn query_param_is_validated() {
         );
     }
     assert!(Options::new(URL).query_param("a-B_c.d~1").is_ok());
+}
+
+#[test]
+fn version_and_mask_take_numbers_or_types() {
+    let a = Options::new(URL).version(6).unwrap().mask(2).unwrap();
+    let b = Options::new(URL)
+        .version(Version::new(6).unwrap())
+        .unwrap()
+        .mask(Mask::new(2).unwrap())
+        .unwrap();
+    assert_eq!(run(&a, 1).text(), run(&b, 1).text());
+    assert_eq!(run(&a, 1).code(), run(&b, 1).code());
+}
+
+#[test]
+fn version_and_mask_are_validated() {
+    for v in [0, 41] {
+        let err = Options::new(URL).version(v).unwrap_err();
+        assert!(matches!(err, qart::Error::InvalidVersion(n) if n == v));
+    }
+    let err = Options::new(URL).mask(8).unwrap_err();
+    assert!(matches!(err, qart::Error::InvalidMask(8)));
 }
